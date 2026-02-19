@@ -101,11 +101,24 @@ export default function App() {
   const stopAll = () => { setActiveRingId(null); setCurrentFrame(-1); setIsPlaying(false); setShowChatbot(false); };
   const downloadReport = async () => {
     try {
-      const blob = await (await fetch("http://localhost:8000/report.json")).blob();
+      // Fetch as text so we control the blob content-type explicitly
+      const text = await (await fetch("http://localhost:8000/report.json")).text();
+      const blob = new Blob([text], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      Object.assign(document.createElement("a"), { href: url, download: "fraud_report.json" }).click();
-      URL.revokeObjectURL(url);
-    } catch (e) { alert("Download failed: " + e.message); }
+
+      // Must append to DOM for Firefox/Safari compatibility
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fraud_report.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // Revoke AFTER the browser has had time to start the download
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      alert("Download failed: " + e.message);
+    }
   };
 
   const activeRing = data?.fraud_rings?.find(r => r.ring_id === activeRingId);
