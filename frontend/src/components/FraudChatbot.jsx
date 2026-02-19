@@ -268,6 +268,7 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState("chat");
+    const [activeModel, setActiveModel] = useState("gemini-2.0-flash");
     const bottomRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -330,15 +331,20 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                 apiKey,
                 systemPrompt,
                 history,
-                (_fragment, accumulated) => {
-                    setStreamingMsg(accumulated);          // update real-time preview
+                (fragment, accumulated, modelId) => {
+                    if (modelId) setActiveModel(modelId);  // Update UI with used model
+                    if (accumulated) setStreamingMsg(accumulated);
                 }
             );
 
             // Stream complete — commit to messages, clear preview
             setMessages(prev => [...prev, { role: "assistant", content: full }]);
         } catch (err) {
-            setError(err.message || "Could not reach Gemini API.");
+            let msg = err.message || "Could not reach Gemini API.";
+            if (msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("limit")) {
+                msg = "🚨 Quota Exceeded: Your daily Gemini API limit has been reached. Attempting to use fallback models...";
+            }
+            setError(msg);
         } finally {
             setLoading(false);
             setStreamingMsg("");
@@ -364,7 +370,9 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                             <span className="text-slate-700">·</span>
                             <span className="text-[9px] text-slate-600 uppercase">{ringData?.pattern_type}</span>
                             <span className="text-slate-700">·</span>
-                            <span className="text-[9px] text-emerald-600">Gemini 2.5 Flash</span>
+                            <span className={`text-[9px] font-mono ${activeModel.includes('2.0') ? 'text-violet-400' : 'text-amber-500'}`}>
+                                {activeModel.replace('gemini-', '').toUpperCase()}
+                            </span>
                         </div>
                     </div>
                 </div>

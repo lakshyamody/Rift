@@ -8,7 +8,16 @@
  */
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.0-flash"; // confirmed available
+
+/** 
+ * Models to try in order of preference. 
+ * If the primary model hits quota limits, we fall back to others.
+ */
+const MODELS = [
+    "gemini-2.0-flash",    // Primary
+    "gemini-flash-latest", // Fallback 1 (points to latest stable flash, e.g., 1.5)
+    "gemini-pro-latest",   // Fallback 2 (points to latest stable pro, e.g., 1.5)
+];
 
 /** Read API key from Vite env — set in frontend/.env */
 export function getApiKey() {
@@ -40,58 +49,97 @@ function buildBody(systemPrompt, history) {
     });
 }
 
-/**
- * Standard (non-streaming) generate.
- * Use for: report generation, JSON export tasks, one-shot summaries.
- * Returns the complete text string.
+/** Utility for waiting */
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/** 
+ * Enhanced fetch with Exponential Backoff and Model Fallback.
+ * Handles 429 (Rate Limit) and quota errors.
  */
+async function retryableFetch(urlBuilder, options, maxRetries = 3) {
+    let lastError = null;
+
+    // Try each model in the list
+    for (const modelId of MODELS) {
+        const url = urlBuilder(modelId);
+
+        // Try multiple times with exponential backoff for the current model
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                if (attempt > 0) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    console.warn(`[Gemini] Retrying ${modelId} (attempt ${attempt + 1}) in ${delay}ms...`);
+                    await sleep(delay);
+                }
+
+                const res = await fetch(url, options);
+
+                if (res.ok) return { res, modelId };
+
+                const errData = await res.json().catch(() => ({}));
+                const message = errData.error?.message || `HTTP ${res.status}`;
+                const reason = errData.error?.status || "";
+
+                // If it's a 429 (Rate Limit), Quota Exceeded, or 404 (Not Found/Unsupported)
+                if (res.status === 429 || res.status === 404 || message.toLowerCase().includes("quota")) {
+                    console.error(`[Gemini] Error for ${modelId}: ${message} (Status: ${res.status})`);
+                    lastError = new Error(message);
+
+                    // If we've hit quota or model is not found, move to NEXT model immediately
+                    if (res.status === 404 || message.toLowerCase().includes("quota") || attempt === maxRetries - 1) {
+                        break;
+                    }
+                    continue;
+                }
+
+                // For other errors (400, 401, etc.), don't retry, just throw
+                throw new Error(message);
+
+            } catch (err) {
+                lastError = err;
+                // If it's a network error or fetch failed, retry
+                if (attempt === maxRetries - 1) break;
+            }
+        }
+    }
+
+    throw lastError || new Error("Failed to reach Gemini API after multiple attempts and fallbacks.");
+}
+
 export async function geminiGenerate(apiKey, systemPrompt, history) {
-    const res = await fetch(`${BASE}/${MODEL}:generateContent`, {
+    const urlBuilder = (model) => `${BASE}/${model}:generateContent`;
+    const options = {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,                         // header auth per docs
+            "x-goog-api-key": apiKey,
         },
         body: buildBody(systemPrompt, history),
-    });
+    };
 
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message ?? `Gemini error: HTTP ${res.status}`);
-    }
-
+    const { res, modelId } = await retryableFetch(urlBuilder, options);
     const data = await res.json();
-    // Response path per docs: candidates[0].content.parts[0].text
-    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response generated.";
+    return {
+        text: data.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response generated.",
+        modelId
+    };
 }
 
-/**
- * Streaming generate — uses SSE (Server-Sent Events).
- * Use for: chatbot responses — gives word-by-word UX.
- *
- * @param {string}   apiKey       – Gemini API key
- * @param {string}   systemPrompt – system instruction
- * @param {Array}    history      – [{role, content}, ...]
- * @param {Function} onChunk      – (fragment, fullAccumulated) called per chunk
- * @returns {Promise<string>}    – the full response text when stream ends
- */
 export async function geminiStream(apiKey, systemPrompt, history, onChunk) {
-    const res = await fetch(
-        `${BASE}/${MODEL}:streamGenerateContent?alt=sse`,   // ?alt=sse per docs
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey,
-            },
-            body: buildBody(systemPrompt, history),
-        }
-    );
+    const urlBuilder = (model) => `${BASE}/${model}:streamGenerateContent?alt=sse`;
+    const options = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+        },
+        body: buildBody(systemPrompt, history),
+    };
 
-    if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message ?? `Gemini stream error: HTTP ${res.status}`);
-    }
+    const { res, modelId } = await retryableFetch(urlBuilder, options);
+
+    // Notify chunk callback of the model being used
+    onChunk("", "", modelId);
 
     // SSE — read line by line, each is a GenerateContentResponse per docs
     const reader = res.body.getReader();
