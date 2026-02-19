@@ -15,3 +15,6 @@ __pycache__/
 
 # Logs
 *.log
+
+# Generated report exports (regenerated on every backend run)
+reports/
