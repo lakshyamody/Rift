@@ -147,7 +147,7 @@ export default function App() {
             <ShieldAlert className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-extrabold tracking-tight">Rift <span className="text-violet-400">GNN</span></h1>
+            <h1 className="text-base font-extrabold tracking-tight">Nacht <span className="text-violet-400">Detect</span></h1>
             <p className="text-[10px] text-slate-500 font-medium">Graph Neural Network Fraud Detection</p>
           </div>
         </div>
@@ -312,7 +312,7 @@ export default function App() {
 
       {/* ── Footer ── */}
       <footer className="flex-none px-6 py-2.5 border-t border-slate-800/40 text-[9px] text-slate-700 flex justify-between items-center font-bold uppercase tracking-widest bg-slate-900/20">
-        <div>Rift GNN · Operational</div>
+        <div>Nacht Detect · Operational</div>
         <div>GCN-Layer2 + Gemini-2.0-Flash</div>
         <div>Latency: {data?.summary?.processing_time_seconds || 0}s</div>
       </footer>

@@ -34,4 +34,4 @@ async def analyze_transactions(file: UploadFile = File(...)):
 
 @router.get("/health")
 async def health_check():
-    return {"status": "ok", "service": "RIFT Money Muling Detection Engine"}
+    return {"status": "ok", "service": "NACHT Money Muling Detection Engine"}

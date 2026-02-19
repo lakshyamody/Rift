@@ -3,7 +3,7 @@ export default function Navbar({ onReset }) {
         <nav className="navbar">
             <div className="navbar-brand">
                 <div className="logo-icon">🕵️</div>
-                <span>RIFT Financial Forensics</span>
+                <span>NACHT Financial Forensics</span>
                 <span className="navbar-badge">2026</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
