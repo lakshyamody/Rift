@@ -78,11 +78,11 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
         if (fgRef.current && graphData.nodes.length > 0) {
             try {
                 const linkForce = fgRef.current.d3Force("link");
-                if (linkForce) linkForce.distance(20).strength(2.0);
+                if (linkForce) linkForce.distance(15).strength(2.5);
                 const chargeForce = fgRef.current.d3Force("charge");
-                if (chargeForce) chargeForce.strength(-40);
+                if (chargeForce) chargeForce.strength(-25); // Reduced repulsion to bring clusters closer
                 const centerForce = fgRef.current.d3Force("center");
-                if (centerForce) centerForce.strength(1.2);
+                if (centerForce) centerForce.strength(1.5); // Stronger centering force
             } catch (e) {
                 console.warn("Force initialization pending...", e);
             }
@@ -162,7 +162,7 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
             )}
 
             <div className="absolute bottom-4 left-4 z-10 bg-slate-900/80 backdrop-blur-md p-4 rounded-lg border border-slate-700 shadow-xl pointer-events-none">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{activeReconstruction ? 'Role Legend' : '3D GNN Legend'}</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{activeReconstruction ? 'Role Legend' : 'Nacht Detect Legend'}</h4>
                 <div className="flex flex-col space-y-2">
                     {activeReconstruction ? (
                         Object.entries(ROLE_COLORS).map(([role, color]) => (
