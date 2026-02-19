@@ -2,10 +2,20 @@
  * gemini.js — Core Gemini REST API module.
  * Uses direct REST calls per the official API docs.
  * All components import from here — never call fetch directly.
+ *
+ * API key lives in frontend/.env as VITE_GEMINI_API_KEY
+ * (that file is .gitignored — never committed)
  */
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODEL = "gemini-2.5-flash-preview-04-17"; // latest
+const MODEL = "gemini-2.0-flash"; // confirmed available
+
+/** Read API key from Vite env — set in frontend/.env */
+export function getApiKey() {
+    const key = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!key) throw new Error("VITE_GEMINI_API_KEY is not set in .env");
+    return key;
+}
 
 /** Convert internal {role, content} messages to Gemini Contents format. */
 function toContents(history) {

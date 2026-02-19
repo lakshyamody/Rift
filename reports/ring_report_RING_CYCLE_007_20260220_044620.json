@@ -1,0 +1,114 @@
+{
+  "report_type": "RING_REPORT",
+  "generated_at": "2026-02-20T04:46:19.999843",
+  "ring_id": "RING_CYCLE_007",
+  "risk_score": 98.0,
+  "pattern_type": "cycle",
+  "executive_summary": {
+    "description": "Operation RING_CYCLE_007 involved laundering \u20b946,800.00. Money entered through T_ACC_010 and was layered through 4 transitions.",
+    "total_laundered": 0.0,
+    "member_count": 4,
+    "duration_hours": 241.1,
+    "detected_techniques": []
+  },
+  "financial_analysis": {
+    "external_inflow": 2000.0,
+    "internal_circulation": 48800.0,
+    "estimated_laundered": 0.0,
+    "total_transactions": 5,
+    "avg_transaction_size": 9760.0,
+    "operation_start": "2024-02-02T08:00:00",
+    "operation_end": "2024-02-12T09:05:00",
+    "duration_hours": 241.1
+  },
+  "network_analysis": {
+    "entry_point": "T_ACC_010",
+    "exit_point": "T_ACC_010",
+    "dominant_path": [
+      "{'step': 1, 'timestamp': '2024-02-02T08:00:00', 'sender': 'T_ACC_010', 'sender_role': 'MULE', 'receiver': 'T_ACC_011', 'receiver_role': 'SHELL', 'amount': 12000.0, 'txn_id': 'TXN_T004'}",
+      "{'step': 2, 'timestamp': '2024-02-02T10:00:00', 'sender': 'T_ACC_011', 'sender_role': 'SHELL', 'receiver': 'T_ACC_012', 'receiver_role': 'SHELL', 'amount': 11800.0, 'txn_id': 'TXN_T005'}",
+      "{'step': 3, 'timestamp': '2024-02-02T12:00:00', 'sender': 'T_ACC_012', 'sender_role': 'SHELL', 'receiver': 'T_ACC_013', 'receiver_role': 'SHELL', 'amount': 11600.0, 'txn_id': 'TXN_T006'}",
+      "{'step': 4, 'timestamp': '2024-02-02T14:00:00', 'sender': 'T_ACC_013', 'sender_role': 'SHELL', 'receiver': 'T_ACC_010', 'receiver_role': 'MULE', 'amount': 11400.0, 'txn_id': 'TXN_T007'}"
+    ],
+    "member_count": 4,
+    "role_breakdown": {
+      "SHELL": [
+        "T_ACC_012",
+        "T_ACC_013",
+        "T_ACC_011"
+      ],
+      "MULE": [
+        "T_ACC_010"
+      ]
+    }
+  },
+  "account_profiles": {
+    "T_ACC_012": {
+      "role": "SHELL",
+      "suspicion_score": 94.53,
+      "total_sent": 11600.0,
+      "total_received": 11800.0,
+      "num_transactions": 2,
+      "unique_counterparties": 2,
+      "first_seen": "2024-02-02T12:00:00",
+      "last_seen": "2024-02-02T10:00:00",
+      "passthrough_pct": 98.3,
+      "ml_role": "SHELL"
+    },
+    "T_ACC_013": {
+      "role": "SHELL",
+      "suspicion_score": 94.53,
+      "total_sent": 11400.0,
+      "total_received": 11600.0,
+      "num_transactions": 2,
+      "unique_counterparties": 2,
+      "first_seen": "2024-02-02T14:00:00",
+      "last_seen": "2024-02-02T12:00:00",
+      "passthrough_pct": 98.3,
+      "ml_role": "SHELL"
+    },
+    "T_ACC_011": {
+      "role": "SHELL",
+      "suspicion_score": 94.53,
+      "total_sent": 11800.0,
+      "total_received": 12000.0,
+      "num_transactions": 2,
+      "unique_counterparties": 2,
+      "first_seen": "2024-02-02T10:00:00",
+      "last_seen": "2024-02-02T08:00:00",
+      "passthrough_pct": 98.3,
+      "ml_role": "SHELL"
+    },
+    "T_ACC_010": {
+      "role": "MULE",
+      "suspicion_score": 93.12,
+      "total_sent": 12000.0,
+      "total_received": 13400.0,
+      "num_transactions": 3,
+      "unique_counterparties": 3,
+      "first_seen": "2024-02-02T08:00:00",
+      "last_seen": "2024-02-12T09:05:00",
+      "passthrough_pct": 89.6,
+      "ml_role": "MULE"
+    }
+  },
+  "cross_ring_connections": [],
+  "narrative": "Operation RING_CYCLE_007 involved laundering \u20b946,800.00. Money entered through T_ACC_010 and was layered through 4 transitions.",
+  "investigator_actions": [
+    {
+      "priority": 1,
+      "urgency": "URGENT",
+      "action": "Subpoena KYC for entry point: T_ACC_010"
+    },
+    {
+      "priority": 2,
+      "urgency": "URGENT",
+      "action": "Pull full transaction history for all 4 member accounts"
+    },
+    {
+      "priority": 3,
+      "urgency": "MEDIUM",
+      "action": "File SAR (Suspicious Activity Report)"
+    }
+  ]
+}

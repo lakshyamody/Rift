@@ -6,9 +6,6 @@ import {
   MessageSquare, Download, Table2
 } from "lucide-react";
 
-const GEMINI_API_KEY = "AIzaSyAUDHBZ4sl2KXRkwifZCHF3WwTlUV2B7n8";
-// Always sync the key into localStorage
-localStorage.setItem("gemini_api_key", GEMINI_API_KEY);
 
 const RISK_COLOR = (score) =>
   score >= 90 ? "text-red-400" : score >= 75 ? "text-orange-400" : "text-yellow-400";

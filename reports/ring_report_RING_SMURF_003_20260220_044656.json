@@ -1,0 +1,237 @@
+{
+  "report_type": "RING_REPORT",
+  "generated_at": "2026-02-20T04:46:56.688747",
+  "ring_id": "RING_SMURF_003",
+  "risk_score": 85.0,
+  "pattern_type": "fan_out",
+  "executive_summary": {
+    "description": "Operation RING_SMURF_003 involved laundering \u20b9597,000.00. Money entered through T_SALARY_CO and was layered through 12 transitions.",
+    "total_laundered": 0.0,
+    "member_count": 13,
+    "duration_hours": 0.0,
+    "detected_techniques": []
+  },
+  "financial_analysis": {
+    "external_inflow": 0.0,
+    "internal_circulation": 597000.0,
+    "estimated_laundered": 0.0,
+    "total_transactions": 12,
+    "avg_transaction_size": 49750.0,
+    "operation_start": "2024-02-13T08:00:00",
+    "operation_end": "2024-02-13T08:00:00",
+    "duration_hours": 0.0
+  },
+  "network_analysis": {
+    "entry_point": "T_SALARY_CO",
+    "exit_point": "T_EMP_L012",
+    "dominant_path": [
+      "{'step': 1, 'timestamp': '2024-02-13T08:00:00', 'sender': 'T_SALARY_CO', 'sender_role': 'RECRUITER', 'receiver': 'T_EMP_L001', 'receiver_role': 'EXIT_POINT', 'amount': 45000.0, 'txn_id': 'T_LEGIT_001'}",
+      "{'step': 2, 'timestamp': '2024-02-13T08:00:00', 'sender': 'T_SALARY_CO', 'sender_role': 'RECRUITER', 'receiver': 'T_EMP_L002', 'receiver_role': 'EXIT_POINT', 'amount': 52000.0, 'txn_id': 'T_LEGIT_002'}",
+      "{'step': 3, 'timestamp': '2024-02-13T08:00:00', 'sender': 'T_SALARY_CO', 'sender_role': 'RECRUITER', 'receiver': 'T_EMP_L003', 'receiver_role': 'EXIT_POINT', 'amount': 38000.0, 'txn_id': 'T_LEGIT_003'}",
+      "{'step': 4, 'timestamp': '2024-02-13T08:00:00', 'sender': 'T_SALARY_CO', 'sender_role': 'RECRUITER', 'receiver': 'T_EMP_L004', 'receiver_role': 'EXIT_POINT', 'amount': 61000.0, 'txn_id': 'T_LEGIT_004'}",
+      "{'step': 5, 'timestamp': '2024-02-13T08:00:00', 'sender': 'T_SALARY_CO', 'sender_role': 'RECRUITER', 'receiver': 'T_EMP_L005', 'receiver_role': 'EXIT_POINT', 'amount': 47000.0, 'txn_id': 'T_LEGIT_005'}"
+    ],
+    "member_count": 13,
+    "role_breakdown": {
+      "EXIT_POINT": [
+        "T_EMP_L006",
+        "T_EMP_L003",
+        "T_EMP_L001",
+        "T_EMP_L005",
+        "T_EMP_L008",
+        "T_EMP_L012",
+        "T_EMP_L004",
+        "T_EMP_L009",
+        "T_EMP_L011",
+        "T_EMP_L010",
+        "T_EMP_L002",
+        "T_EMP_L007"
+      ],
+      "RECRUITER": [
+        "T_SALARY_CO"
+      ]
+    }
+  },
+  "account_profiles": {
+    "T_EMP_L006": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 55000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L003": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 38000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L001": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 45000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L005": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 47000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_SALARY_CO": {
+      "role": "RECRUITER",
+      "suspicion_score": 91.56,
+      "total_sent": 597000.0,
+      "total_received": 0.0,
+      "num_transactions": 12,
+      "unique_counterparties": 12,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 100,
+      "ml_role": "RECRUITER"
+    },
+    "T_EMP_L008": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 49000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L012": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 39000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L004": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 61000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L009": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 58000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L011": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 67000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L010": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 44000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L002": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 52000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    },
+    "T_EMP_L007": {
+      "role": "EXIT_POINT",
+      "suspicion_score": 33.54,
+      "total_sent": 0.0,
+      "total_received": 42000.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-13T08:00:00",
+      "last_seen": "2024-02-13T08:00:00",
+      "passthrough_pct": 0.0,
+      "ml_role": "EXIT_POINT"
+    }
+  },
+  "cross_ring_connections": [],
+  "narrative": "Operation RING_SMURF_003 involved laundering \u20b9597,000.00. Money entered through T_SALARY_CO and was layered through 12 transitions.",
+  "investigator_actions": [
+    {
+      "priority": 1,
+      "urgency": "IMMEDIATE",
+      "action": "Trace withdrawals from: T_EMP_L006, T_EMP_L003, T_EMP_L001, T_EMP_L005, T_EMP_L008, T_EMP_L012, T_EMP_L004, T_EMP_L009, T_EMP_L011, T_EMP_L010, T_EMP_L002, T_EMP_L007"
+    },
+    {
+      "priority": 2,
+      "urgency": "URGENT",
+      "action": "Subpoena KYC for entry point: T_SALARY_CO"
+    },
+    {
+      "priority": 3,
+      "urgency": "URGENT",
+      "action": "Pull full transaction history for all 13 member accounts"
+    },
+    {
+      "priority": 4,
+      "urgency": "MEDIUM",
+      "action": "File SAR (Suspicious Activity Report)"
+    }
+  ]
+}

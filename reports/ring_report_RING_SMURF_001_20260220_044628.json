@@ -1,0 +1,237 @@
+{
+  "report_type": "RING_REPORT",
+  "generated_at": "2026-02-20T04:46:28.728248",
+  "ring_id": "RING_SMURF_001",
+  "risk_score": 85.0,
+  "pattern_type": "fan_in",
+  "executive_summary": {
+    "description": "Operation RING_SMURF_001 involved laundering \u20b95,404.00. Money entered through T_MIX_S001 and was layered through 12 transitions.",
+    "total_laundered": 5400.0,
+    "member_count": 13,
+    "duration_hours": 12.1,
+    "detected_techniques": []
+  },
+  "financial_analysis": {
+    "external_inflow": 0.0,
+    "internal_circulation": 10804.0,
+    "estimated_laundered": 5400.0,
+    "total_transactions": 14,
+    "avg_transaction_size": 771.71,
+    "operation_start": "2024-02-19T08:00:00",
+    "operation_end": "2024-02-19T20:05:00",
+    "duration_hours": 12.1
+  },
+  "network_analysis": {
+    "entry_point": "T_MIX_S001",
+    "exit_point": "T_MIX_AGG",
+    "dominant_path": [
+      "{'step': 1, 'timestamp': '2024-02-19T08:00:00', 'sender': 'T_MIX_S001', 'sender_role': 'MULE', 'receiver': 'T_MIX_AGG', 'receiver_role': 'COLLECTOR', 'amount': 450.0, 'txn_id': 'TXN_T102'}",
+      "{'step': 2, 'timestamp': '2024-02-19T08:10:00', 'sender': 'T_MIX_S002', 'sender_role': 'MULE', 'receiver': 'T_MIX_AGG', 'receiver_role': 'COLLECTOR', 'amount': 460.0, 'txn_id': 'TXN_T103'}",
+      "{'step': 3, 'timestamp': '2024-02-19T08:20:00', 'sender': 'T_MIX_S003', 'sender_role': 'MULE', 'receiver': 'T_MIX_AGG', 'receiver_role': 'COLLECTOR', 'amount': 440.0, 'txn_id': 'TXN_T104'}",
+      "{'step': 4, 'timestamp': '2024-02-19T08:30:00', 'sender': 'T_MIX_S004', 'sender_role': 'MULE', 'receiver': 'T_MIX_AGG', 'receiver_role': 'COLLECTOR', 'amount': 455.0, 'txn_id': 'TXN_T105'}",
+      "{'step': 5, 'timestamp': '2024-02-19T08:40:00', 'sender': 'T_MIX_S005', 'sender_role': 'MULE', 'receiver': 'T_MIX_AGG', 'receiver_role': 'COLLECTOR', 'amount': 445.0, 'txn_id': 'TXN_T106'}"
+    ],
+    "member_count": 13,
+    "role_breakdown": {
+      "COLLECTOR": [
+        "T_MIX_AGG"
+      ],
+      "MULE": [
+        "T_MIX_S001",
+        "T_MIX_S010",
+        "T_MIX_S003",
+        "T_MIX_S011",
+        "T_MIX_S002",
+        "T_MIX_S005",
+        "T_MIX_S004",
+        "T_MIX_S006",
+        "T_MIX_S008",
+        "T_MIX_S009",
+        "T_MIX_S012",
+        "T_MIX_S007"
+      ]
+    }
+  },
+  "account_profiles": {
+    "T_MIX_S001": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 450.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:00:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S010": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 456.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:30:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S003": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 440.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:20:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S011": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 444.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:40:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S002": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 460.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:10:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S005": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 445.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:40:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S004": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 455.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:30:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S006": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 452.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T08:50:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S008": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 458.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:10:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_AGG": {
+      "role": "COLLECTOR",
+      "suspicion_score": 100.0,
+      "total_sent": 5400.0,
+      "total_received": 5404.0,
+      "num_transactions": 14,
+      "unique_counterparties": 14,
+      "first_seen": "2024-02-19T20:00:00",
+      "last_seen": "2024-02-19T09:50:00",
+      "passthrough_pct": 99.9,
+      "ml_role": "COLLECTOR"
+    },
+    "T_MIX_S009": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 442.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:20:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S012": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 454.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:50:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    },
+    "T_MIX_S007": {
+      "role": "MULE",
+      "suspicion_score": 32.91,
+      "total_sent": 448.0,
+      "total_received": 0.0,
+      "num_transactions": 1,
+      "unique_counterparties": 1,
+      "first_seen": "2024-02-19T09:00:00",
+      "last_seen": "2024-02-19T20:05:00",
+      "passthrough_pct": 100,
+      "ml_role": "MULE"
+    }
+  },
+  "cross_ring_connections": [],
+  "narrative": "Operation RING_SMURF_001 involved laundering \u20b95,404.00. Money entered through T_MIX_S001 and was layered through 12 transitions.",
+  "investigator_actions": [
+    {
+      "priority": 1,
+      "urgency": "URGENT",
+      "action": "Block outbound transfers from: T_MIX_AGG"
+    },
+    {
+      "priority": 2,
+      "urgency": "URGENT",
+      "action": "Subpoena KYC for entry point: T_MIX_S001"
+    },
+    {
+      "priority": 3,
+      "urgency": "URGENT",
+      "action": "Pull full transaction history for all 13 member accounts"
+    },
+    {
+      "priority": 4,
+      "urgency": "MEDIUM",
+      "action": "File SAR (Suspicious Activity Report)"
+    }
+  ]
+}

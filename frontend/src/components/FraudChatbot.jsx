@@ -5,11 +5,11 @@ import {
     Clock, DollarSign, Activity, Users, Target, ArrowRight,
     ArrowUpRight, Lock, Eye, Layers, CheckCircle
 } from "lucide-react";
-import { geminiStream } from "../gemini";
+import { geminiStream, getApiKey } from "../gemini";
 import DownloadManager from "./DownloadManager";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const GEMINI_API_KEY = "AIzaSyAUDHBZ4sl2KXRkwifZCHF3WwTlUV2B7n8";
+// API key lives in frontend/.env (VITE_GEMINI_API_KEY) — never hardcoded
 
 const SEVERITY_COLORS = {
     CRITICAL: { bg: "bg-red-950/40", border: "border-red-500/25", text: "text-red-400", badge: "bg-red-500/15" },
@@ -323,10 +323,11 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
 
         try {
             const systemPrompt = ringData?.system_prompt || "";
+            const apiKey = getApiKey(); // reads from VITE_GEMINI_API_KEY in .env
 
             // geminiStream fires onChunk as each SSE fragment arrives
             const full = await geminiStream(
-                GEMINI_API_KEY,
+                apiKey,
                 systemPrompt,
                 history,
                 (_fragment, accumulated) => {
@@ -371,8 +372,8 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                     {TABS.map(({ id, icon: Icon, label }) => (
                         <button key={id} onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === id
-                                    ? "bg-violet-500/20 text-violet-300 border border-violet-500/25"
-                                    : "text-slate-600 border border-transparent hover:text-slate-400 hover:bg-slate-800/40"
+                                ? "bg-violet-500/20 text-violet-300 border border-violet-500/25"
+                                : "text-slate-600 border border-transparent hover:text-slate-400 hover:bg-slate-800/40"
                                 }`}>
                             <Icon className="w-3 h-3" />
                             {label}
@@ -449,8 +450,8 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                                 </div>
                             )}
                             <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-xs leading-relaxed whitespace-pre-wrap ${m.role === "user"
-                                    ? "bg-violet-600/15 border border-violet-500/20 text-slate-200 rounded-tr-sm"
-                                    : "bg-slate-900/70 border border-slate-800/50 text-slate-300 rounded-tl-sm"
+                                ? "bg-violet-600/15 border border-violet-500/20 text-slate-200 rounded-tr-sm"
+                                : "bg-slate-900/70 border border-slate-800/50 text-slate-300 rounded-tl-sm"
                                 }`}>{m.content}</div>
                             {m.role === "user" && (
                                 <div className="w-6 h-6 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
