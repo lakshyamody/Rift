@@ -134,7 +134,7 @@ export default function App() {
     ? `AI Analyst — ${activeRingId}`
     : showTable ? "Fraud Ring Summary"
       : activeRingId ? `Reconstruction: ${activeRingId}`
-        : "Network Visualization";
+        : "Transactions Visualization";
 
   return (
     // Root: locked to full viewport, no overflow
