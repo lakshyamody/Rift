@@ -1,34 +1,17 @@
-# Python
+# Diagnostics (Private)
+diagnose_model.py
+model_diagnosis_report.md
+.gemini/
+
+# Python standard
 __pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-.env
-.venv/
-venv/
 *.pyc
+.venv/
+.env
 
-# Node
-node_modules/
-dist/
-.next/
-.nuxt/
+# Data (Assuming sample data is public, but generated/large data might be private)
+# Check user preference first, but for now just the diagnostics.
+# data/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Data (large files)
-data/*.csv
-data/*.json
-
-# Env files
-*.env
-.env.local
-.env.production
+# Logs
+*.log

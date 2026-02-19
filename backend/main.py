@@ -1,18 +1,14 @@
-"""
-RIFT 2026 — Financial Crime Detection Engine
-FastAPI main application entry point.
-"""
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from routers.analyze import router as analyze_router
+from .models import DetectionResponse, AccountSuspicion, FraudRing, AnalysisSummary
+from .orchestrator import analyze_transactions
+import pandas as pd
+import io
+import networkx as nx
+from typing import List
 
-app = FastAPI(
-    title="RIFT Money Muling Detection Engine",
-    description="Graph-based financial crime detection using cycle detection, smurfing analysis, and shell network identification.",
-    version="1.0.0",
-)
+app = FastAPI(title="Money Muling Detection Engine", version="1.0.0")
 
-# CORS — allow frontend (any origin for hackathon/deployment)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,14 +17,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(analyze_router, prefix="/api")
-
-
 @app.get("/")
-async def root():
-    return {
-        "message": "RIFT 2026 Money Muling Detection Engine",
-        "docs": "/docs",
-        "health": "/api/health",
-        "analyze": "POST /api/analyze",
-    }
+def read_root():
+    return {"status": "ok", "message": "Money Muling Detection Engine is running in modular mode"}
+
+@app.post("/detect", response_model=DetectionResponse)
+async def detect_money_muling(file: UploadFile = File(...)):
+    if not file.filename.endswith('.csv'):
+        # Just warn, but maybe allow if user forgot extension
+        pass
+    
+    try:
+        content = await file.read()
+        df = pd.read_csv(io.BytesIO(content))
+        
+        # Validation
+        required_columns = {'sender_id', 'receiver_id', 'amount', 'timestamp'}
+        if not required_columns.issubset(df.columns):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"CSV must contain columns: {required_columns}. Found: {df.columns.tolist()}"
+            )
+            
+        # Analysis
+        result = analyze_transactions(df)
+        
+        return DetectionResponse(**result)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
