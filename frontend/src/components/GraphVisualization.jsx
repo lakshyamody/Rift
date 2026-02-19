@@ -26,18 +26,33 @@ const GraphVisualization = ({ data }) => {
     useEffect(() => {
         // Auto-fit graph on data load
         if (fgRef.current && graphData.nodes.length > 0) {
-            // Configure forces for tighter clustering
-            fgRef.current.d3Force("link").distance(30).strength(1.5);
-            fgRef.current.d3Force("charge").strength(-80);
+            try {
+                // Configure forces for tighter clustering
+                const linkForce = fgRef.current.d3Force("link");
+                if (linkForce) {
+                    linkForce.distance(30).strength(1.5);
+                }
+                const chargeForce = fgRef.current.d3Force("charge");
+                if (chargeForce) {
+                    chargeForce.strength(-80);
+                }
+            } catch (e) {
+                console.warn("Force initialization pending...", e);
+            }
 
             // Small delay to ensure engine has started
             setTimeout(() => {
-                fgRef.current.zoomToFit(400, 100);
-            }, 500);
+                if (fgRef.current) fgRef.current.zoomToFit(400, 100);
+            }, 800);
         }
     }, [graphData]);
 
-    if (!data) return <div className="flex items-center justify-center h-full text-slate-400">Loading complex network scenarios...</div>;
+    if (!data || !data.nodes) return (
+        <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-900/20 rounded-xl border border-dashed border-slate-800">
+            <div className="animate-pulse mb-4 text-primary">●</div>
+            <div className="text-sm font-medium tracking-tight">Initializing 3D Spatial Engine...</div>
+        </div>
+    );
 
     return (
         <div className="w-full h-full relative border border-slate-800 rounded-xl overflow-hidden bg-slate-950 shadow-2xl">

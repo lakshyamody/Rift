@@ -229,8 +229,9 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     ring_centers = set()
     for ring in fraud_rings:
         if ring['member_accounts']:
-            # Use the first account in the list as the 'center' for coloring purposes
             ring_centers.add(ring['member_accounts'][0])
+
+    print(f"DEBUG: Found {len(fraud_rings)} rings and {len(ring_centers)} ring centers")
 
     for acc in all_accounts:
         suspicious_info = next((a for a in suspicious_accounts if a['account_id'] == acc), None)
@@ -252,12 +253,12 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         nodes_data.append({
             "id": str(acc),
             "label": str(acc),
-            "x": np.random.uniform(-50, 50), # Tighter initial spread
-            "y": np.random.uniform(-50, 50),
-            "z": np.random.uniform(-50, 50),
+            "x": float(np.random.uniform(-40, 40)), 
+            "y": float(np.random.uniform(-40, 40)),
+            "z": float(np.random.uniform(-40, 40)),
             "size": 12 if (acc in ring_centers or (is_suspicious and not is_in_ring)) else (8 if is_in_ring else 5),
             "color": color,
-            "suspicion_score": max(ml_scores.get(acc, 0), gnn_scores.get(acc, 0), receiver_s1_map.get(acc, 0)),
+            "suspicion_score": float(max(ml_scores.get(acc, 0), gnn_scores.get(acc, 0), receiver_s1_map.get(acc, 0).item() if hasattr(receiver_s1_map.get(acc, 0), 'item') else receiver_s1_map.get(acc, 0))),
             "pattern": account_ring_map.get(acc, "legitimate")
         })
         
