@@ -293,6 +293,7 @@ export default function App() {
             {showChatbot && activeChatbotRing ? (
               <div className="h-full">
                 <FraudChatbot
+                  key={activeChatbotRing.ring_id}
                   ringData={activeChatbotRing}
                   allCrossRingPatterns={data?.cross_ring_patterns || []}
                   allData={data}
