@@ -3,10 +3,10 @@ import pandas as pd
 from typing import Dict, Any
 
 from .core.graph import build_graph
-from .detectors.cycles import detect_cycles
-from .detectors.smurfing import detect_smurfing
-from .detectors.shells import detect_shells
-from .ml.anomalies import calculate_ml_suspicion_scores
+from .detectors.circular_fund_routing import detect_cycles
+from .detectors.smurfing_patterns import detect_smurfing
+from .detectors.layered_shell_networks import detect_shells
+from .ml.isolation_forest_anomaly import calculate_ml_suspicion_scores
 
 def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     start_time = time.time()
@@ -26,9 +26,56 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     # 3. Shell Detection
     shells = detect_shells(G, df)
     
-    # 3. ML Anomaly Detection (Run last to potentially use ring info? No, it's parallel feature)
+    # 3. ML Anomaly Detection
     ml_scores = calculate_ml_suspicion_scores(df)
     
+    # 4. Receiver-Side Detection (NEW)
+    from .core.profiling import PersonalAmountProfile, compute_s1_score, rapid_inflow_exit_detector
+    from .detectors.mule_collectors import detect_mule_collectors
+
+    # 4a. Build Profiles & Run Segment-of-One
+    profiles = {}
+    txn_scores = []
+    
+    # Pre-build profiles for relevant accounts
+    # Optimization: Only build for active receivers? 
+    # For now, build for all unique accounts in this batch
+    unique_accounts = set(df.sender_id) | set(df.receiver_id)
+    for acc in unique_accounts:
+        profiles[acc] = PersonalAmountProfile(acc).fit(df)
+        
+    # Score Inbound Transactions
+    for _, txn in df.iterrows():
+        rid = txn['receiver_id']
+        if rid in profiles:
+             signals = profiles[rid].score_new_transaction(txn, role='receiver')
+             s1 = compute_s1_score(signals)
+             if s1 > 50: # Only track significant risk
+                 txn_scores.append({
+                     'receiver_id': rid,
+                     's1_score': s1
+                 })
+                 
+    # Aggregate S1 scores per receiver
+    receiver_s1_map = {}
+    if txn_scores:
+        s1_df = pd.DataFrame(txn_scores)
+        receiver_s1_map = s1_df.groupby('receiver_id')['s1_score'].max().to_dict()
+        
+    # 4b. Mule Collector
+    mule_collectors = detect_mule_collectors(df)
+    mule_map = {m['receiver_id']: m for m in mule_collectors}
+    
+    # 4c. Rapid Exit
+    rapid_exit_alerts = []
+    # Only run for high S1 or high Mule Score accounts
+    high_risk_candidates = set(receiver_s1_map.keys()) | set(mule_map.keys())
+    for acc in high_risk_candidates:
+        alerts = rapid_inflow_exit_detector(acc, df)
+        rapid_exit_alerts.extend(alerts)
+        
+    rapid_exit_map = {a['account_id']: a for a in rapid_exit_alerts}
+
     # Aggregate Results
     suspicious_accounts = []
     fraud_rings = []
@@ -93,53 +140,73 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         patterns = []
         ring_id = account_ring_map.get(account)
         
-        # Check membership in rings to determine pattern tagging
-        # (Optimized: we already built the map, but we need pattern names)
-        
-        # We can iterate rings again or build a better map. 
-        # Let's just check rings.
+        # Check membership in rings
         for ring in fraud_rings:
             if account in ring['member_accounts']:
                 if ring['pattern_type'] == 'cycle':
                      patterns.append(f"cycle_member")
                 elif 'fan_' in ring['pattern_type']:
-                    if account == ring['member_accounts'][0]: # center is first in our list constr logic
+                    if account == ring['member_accounts'][0]: 
                         patterns.append(f"{ring['pattern_type']}_center")
                     else:
                         patterns.append(f"{ring['pattern_type']}_member")
                 elif ring['pattern_type'] == 'layered_shell':
                     patterns.append("shell_member")
         
-        base_score = ml_scores.get(account, 0)
+        # 1. Sender Side Score (ML + Graph)
+        sender_score = ml_scores.get(account, 0)
         
-        # Score Logic
-        # - If in a ring, High Score (80+)
-        # - If Center of Smurf, Very High (90+)
-        # - If Cycle Member, High (90+)
+        # 2. Receiver Side Score (S1 + Mule)
+        s1_val = receiver_s1_map.get(account, 0)
+        mule_val = mule_map.get(account, {}).get('mule_collector_score', 0)
+        rapid_val = 95.0 if account in rapid_exit_map else 0
         
-        final_score = base_score
+        # Weighted Receiver Score
+        receiver_score = max(s1_val, mule_val, rapid_val)
+        
+        if account in mule_map:
+             patterns.append(f"mule_collector_risk:{mule_map[account]['risk_label']}")
+        if account in rapid_exit_map:
+             patterns.append("rapid_exit_detected")
+        
+        # Fusion Strategy: MAX(Sender, Receiver)
+        # If you fail EITHER check, you are flagged.
+        base_final = max(sender_score, receiver_score)
+        
+        final_score = base_final
         
         if patterns:
-            # High Priority: Center of Smurfing, Cycle Members, Fan-In Members (Senders), Shell Members
+            # High Priority Patterns Boosting
             if any('center' in p for p in patterns) or \
                any('cycle' in p for p in patterns) or \
                any('shell' in p for p in patterns) or \
-               any('fan_in_member' in p for p in patterns):
+               any('rapid_exit' in p for p in patterns) or \
+               any('CRITICAL' in p for p in patterns):
                 final_score = max(final_score, 90.0)
             elif any('fan_out_member' in p for p in patterns):
-                # Fan-Out recipients (Drop accounts/Victims) are lower risk unless they have other activity
-                # Do not boost arbitrarily high, but keep relevant if ML score is high
                 pass 
             else:
-                final_score = max(final_score, 75.0)
+                final_score = max(final_score, 75.0) # Members get min 75
+        
+        # Post-Processing Whitelist for High Volume Merchants/Payroll
+        if not patterns and final_score > 60:
+            pass
+
+        # Reporting Threshold
+        if final_score >= 75:
+            # Metadata construction
+            meta = {}
+            if account in mule_map:
+                meta['mule_stats'] = mule_map[account]
+            if account in rapid_exit_map:
+                meta['rapid_exit_stats'] = rapid_exit_map[account]
                 
-        # Only report if threshold met
-        if final_score > 50:
             suspicious_accounts.append({
                 "account_id": account,
                 "suspicion_score": float(final_score),
                 "detected_patterns": list(set(patterns)), # dedupe
-                "ring_id": ring_id
+                "ring_id": ring_id,
+                "metadata": meta
             })
             
     # Sort by score

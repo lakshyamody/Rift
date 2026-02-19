@@ -23,10 +23,21 @@ def detect_smurfing(df: pd.DataFrame, time_window_hours: int = 72) -> List[Dict[
             s_in = stats.loc[receiver, 'recv_sum']
             ratio = s_out / s_in if s_in > 0 else 0
             
-            # If ratio is very low, it's a sink (Merchant), unless it's just accumulating for a big burst later?
-            # But specific Hackathon trap says "Merchant". Merchants generally don't send money out to individuals.
-            # Mules pass it on.
-            if ratio < 0.1: 
+            # Refined Merchant Check
+            # 1. Flow Ratio < 0.1 (Mostly just receiving)
+            # 2. Or High Unique Senders (Merchants have many customers)
+            unique_senders = group['sender_id'].nunique()
+            
+            is_merchant = False
+            # Fix: Only classify as Merchant if volume is high enough to be a business (>20 txs)
+            # Small sinks (10-20 txs) are likely smurfing aggregators.
+            if len(group) > 20: 
+                if ratio < 0.05:
+                    is_merchant = True
+                elif unique_senders > 20 and ratio < 0.2:
+                    is_merchant = True
+            
+            if is_merchant: 
                 continue # Likely Merchant
                 
             patterns.append({
@@ -45,34 +56,37 @@ def detect_smurfing(df: pd.DataFrame, time_window_hours: int = 72) -> List[Dict[
         if (max_time - min_time).total_seconds() <= time_window_hours * 3600:
             
             # Payroll Check: Source of funds?
-            # Payroll accounts usually have huge Out but 0 In (from this graph's perspective, or loaded via internal transfer)
-            # Mules usually have In ~= Out.
             s_out = stats.loc[sender, 'sent_sum']
             s_in = stats.loc[sender, 'recv_sum']
             
-            # Filter Logic for Source Fan-Out (s_in == 0)
-            if s_in == 0:
-                # Risk: Payroll vs Mule Distributor
-                # 1. Time Variance Check
-                timestamps = group['timestamp']
-                duration = (timestamps.max() - timestamps.min()).total_seconds()
-                
-                # 2. Amount Variance Check
-                amounts = group['amount']
-                if len(amounts) > 1:
-                    cv = amounts.std() / amounts.mean() if amounts.mean() > 0 else 0
-                else:
-                    cv = 0
-                
-                # Decision:
-                # Payroll: "Batch" (Duration ~ 0) AND Variable Amounts (CV > 0.01)
-                # Mule: "Manual" (Duration > 60s) OR Structured/Round (CV ~ 0)
-                
-                if duration < 60 and cv > 0.01:
-                    # Likely Payroll
+            # CV (Coefficient of Variation) of amounts
+            amounts = group['amount']
+            if len(amounts) > 1:
+                cv = amounts.std() / amounts.mean() if amounts.mean() > 0 else 0
+            else:
+                cv = 0
+
+            # Refined Payroll Check
+            # 1. Pure Source (s_in == 0 or very low ratio)
+            # 2. And (Low CV OR Long Duration)
+            # Payroll is often consistent amounts (low CV) OR happens over a day (Long Duration)
+            # Mules are often "Empty the account ASAP" (Short duration) AND "Split into varied/random amounts" (High CV)
+            
+            duration = (max_time - min_time).total_seconds()
+            
+            # Logic: If it's a pure source...
+            if s_in < (s_out * 0.05):
+                # If it's very fast, it's suspicious (Smurfing Source / Dispersion)
+                # But if it's slow (all day), it's likely business/payroll
+                if duration > 3600: # Takes more than an hour to send 10 txs -> Regular business
                     continue
                 
-                # Otherwise, keep it (Mule Distributor or Layering Start)
+                # If fast, check amounts
+                # If amounts are super identical (CV ~ 0), it could be automated programmatic payouts (Legit) 
+                # or structuring (Fraud). 
+                # But usually "Fan-Out" fraud varies amounts to look organic.
+                if cv < 0.01:
+                    continue # Likely systematic payment
             
             patterns.append({
                 'type': 'fan_out',
@@ -82,13 +96,8 @@ def detect_smurfing(df: pd.DataFrame, time_window_hours: int = 72) -> List[Dict[
             })
             
     # Deduplicate: Merge Fan-In and Fan-Out if center is same (The "Smurf" aggregator)
-    # Actually, keep them separate pattern types for clarity, but the Ring construction will handle grouping if needed.
-    # But user asked to "combine smurfing pattern".
-    # Let's look for accounts that are BOTH centers.
-    
     unique_centers = set(p['center'] for p in patterns)
     merged_patterns = []
-    processed_centers = set()
     
     center_map = {p['center']: [] for p in patterns}
     for p in patterns:
@@ -98,10 +107,8 @@ def detect_smurfing(df: pd.DataFrame, time_window_hours: int = 72) -> List[Dict[
         if len(p_list) > 1:
             # Both Fan-In and Fan-Out
             members = set()
-            types = []
             for p in p_list:
                 members.update(p['members'])
-                types.append(p['type'])
             merged_patterns.append({
                 'type': 'fan_in_out',
                 'center': center,

@@ -1,7 +1,7 @@
 import pandas as pd
 import networkx as nx
 import numpy as np
-from ..detectors.cycles import detect_cycles, cycle_repetition_count
+from ..detectors.circular_fund_routing import detect_cycles, cycle_repetition_count
 
 def extract_features(df: pd.DataFrame, G: nx.DiGraph) -> pd.DataFrame:
     """
