@@ -298,6 +298,7 @@ export default function App() {
                 <FraudChatbot
                   ringData={activeChatbotRing}
                   allCrossRingPatterns={data?.cross_ring_patterns || []}
+                  allData={data}
                   onClose={closeChatbot}
                 />
               </div>

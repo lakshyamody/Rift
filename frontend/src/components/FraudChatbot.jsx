@@ -6,6 +6,7 @@ import {
     ArrowUpRight, Lock, Eye, Layers, CheckCircle
 } from "lucide-react";
 import { GoogleGenAI } from "@google/genai";
+import DownloadManager from "./DownloadManager";
 
 const GEMINI_API_KEY_DEFAULT = "AIzaSyAUDHBZ4sl2KXRkwifZCHF3WwTlUV2B7n8";
 
@@ -28,6 +29,7 @@ const TABS = [
     { id: "chat", icon: MessageCircle, label: "Investigate" },
     { id: "report", icon: FileText, label: "Report" },
     { id: "patterns", icon: Network, label: "Cross-Ring" },
+    { id: "downloads", icon: Download, label: "Downloads" },
 ];
 
 const QUESTIONS = (ring) => [
@@ -244,7 +246,7 @@ function ReportView({ ringData, onDownloadTxt }) {
 }
 
 // ── Main Component ──────────────────────────────────────────────────────────────
-export default function FraudChatbot({ ringData, allCrossRingPatterns, onClose }) {
+export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, onClose }) {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -328,8 +330,8 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, onClose }
                     {TABS.map(({ id, icon: Icon, label }) => (
                         <button key={id} onClick={() => setActiveTab(id)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${activeTab === id
-                                    ? "bg-violet-500/20 text-violet-300 border border-violet-500/25"
-                                    : "text-slate-600 border border-transparent hover:text-slate-400 hover:bg-slate-800/40"
+                                ? "bg-violet-500/20 text-violet-300 border border-violet-500/25"
+                                : "text-slate-600 border border-transparent hover:text-slate-400 hover:bg-slate-800/40"
                                 }`}>
                             <Icon className="w-3 h-3" />
                             {label}
@@ -395,8 +397,8 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, onClose }
                                 </div>
                             )}
                             <div className={`max-w-[82%] rounded-2xl px-4 py-3 text-xs leading-relaxed whitespace-pre-wrap ${m.role === "user"
-                                    ? "bg-violet-600/15 border border-violet-500/20 text-slate-200 rounded-tr-sm"
-                                    : "bg-slate-900/70 border border-slate-800/50 text-slate-300 rounded-tl-sm"
+                                ? "bg-violet-600/15 border border-violet-500/20 text-slate-200 rounded-tr-sm"
+                                : "bg-slate-900/70 border border-slate-800/50 text-slate-300 rounded-tl-sm"
                                 }`}>{m.content}</div>
                             {m.role === "user" && (
                                 <div className="w-6 h-6 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 mt-0.5">
@@ -473,6 +475,19 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, onClose }
                             <p className="text-xs">No cross-ring patterns detected</p>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ── DOWNLOADS TAB ── */}
+            {activeTab === "downloads" && (
+                <div className="flex-1 min-h-0 overflow-hidden">
+                    <DownloadManager
+                        exportData={allData?.export}
+                        fraudRings={allData?.fraud_rings}
+                        suspiciousAccounts={allData?.suspicious_accounts}
+                        crossRingPatterns={allData?.cross_ring_patterns}
+                        summary={allData?.export?.full?.summary}
+                    />
                 </div>
             )}
         </div>

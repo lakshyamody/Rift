@@ -15,6 +15,7 @@ from .ml.reporting import (
     build_ring_context, build_system_prompt, analyze_cross_ring_patterns,
     generate_ring_report, generate_master_report, export_report_json
 )
+from .ml.report_exporter import ReportExporter
 
 def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     start_time = time.time()
@@ -349,6 +350,19 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
             'role_breakdown': ns.get('role_breakdown', {}),
         })
     
+    # 5. Run ReportExporter — produces the 4 structured report types
+    node_scores_map = {node['id']: node['suspicion_score'] for node in nodes_data}
+    exporter = ReportExporter(
+        all_ring_contexts=all_ring_contexts,
+        cross_ring_patterns=cross_ring_patterns,
+        df=df,
+        node_roles=node_roles,
+        node_scores=node_scores_map,
+    )
+    export_results = exporter.export_all()
+
+    processing_time = time.time() - start_time
+
     chatbot_payload = {
         'generated_at': datetime.now().isoformat(),
         'total_rings': len(chatbot_rings),
@@ -357,8 +371,10 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         'rings': chatbot_rings
     }
 
-    processing_time = time.time() - start_time
-    
+    full_report = export_results.get('full', {})
+    if 'summary' in full_report:
+        full_report['summary']['processing_time_seconds'] = round(processing_time, 4)
+
     return {
         "suspicious_accounts": suspicious_accounts,
         "fraud_rings": fraud_rings,
@@ -374,5 +390,11 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         },
         "cross_ring_patterns": cross_ring_patterns,
         "master_report": master_report,
-        "chatbot_payload": chatbot_payload
+        "chatbot_payload": chatbot_payload,
+        "export": {
+            "full"    : full_report,
+            "accounts": export_results.get('accounts', {}),
+            "patterns": export_results.get('patterns', {}),
+            "rings"   : export_results.get('rings', {}),
+        }
     }

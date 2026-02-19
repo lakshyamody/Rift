@@ -118,6 +118,54 @@ async def get_report_data():
         _last_result_cache = analyze_transactions(df)
     return JSONResponse(content=_build_report_payload(_last_result_cache))
 
+def _get_cache():
+    """Ensure cache is populated, run analysis if needed."""
+    global _last_result_cache
+    if _last_result_cache is None:
+        sample_path = "data/test_complex_scenarios.csv"
+        if not os.path.exists(sample_path):
+            raise HTTPException(status_code=404, detail="No analysis available. Call /sample first.")
+        _last_result_cache = analyze_transactions(pd.read_csv(sample_path))
+    return _last_result_cache
+
+def _make_download(payload: dict, filename: str):
+    import json
+    from fastapi.responses import Response
+    b = json.dumps(payload, indent=2, default=str, ensure_ascii=False).encode("utf-8")
+    return Response(content=b, media_type="application/json",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"',
+                             "Content-Length": str(len(b))})
+
+@app.get("/export/full")
+async def export_full():
+    """Full Network Report — everything in one JSON."""
+    result = _get_cache()
+    payload = result.get("export", {}).get("full") or _build_report_payload(result)
+    return _make_download(payload, "full_network_report.json")
+
+@app.get("/export/accounts")
+async def export_accounts():
+    """Suspicious Accounts — flat list sorted by score."""
+    result = _get_cache()
+    payload = result.get("export", {}).get("accounts", {})
+    return _make_download(payload, "suspicious_accounts.json")
+
+@app.get("/export/patterns")
+async def export_patterns():
+    """Cross-Ring Patterns — network-wide analysis."""
+    result = _get_cache()
+    payload = result.get("export", {}).get("patterns", {})
+    return _make_download(payload, "cross_ring_patterns.json")
+
+@app.get("/export/ring/{ring_id}")
+async def export_ring(ring_id: str):
+    """Per-Ring Report — full detail for one ring."""
+    result = _get_cache()
+    rings_map = result.get("export", {}).get("rings", {})
+    if ring_id not in rings_map:
+        raise HTTPException(status_code=404, detail=f"Ring {ring_id} not found")
+    return _make_download(rings_map[ring_id], f"ring_report_{ring_id}.json")
+
 @app.post("/detect", response_model=DetectionResponse)
 async def detect_money_muling(file: UploadFile = File(...)):
     global _last_result_cache
