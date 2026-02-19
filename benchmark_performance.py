@@ -90,11 +90,33 @@ def generate_benchmark_data(num_tx=10000):
     return df, known_fraudsters, known_legit_high_volume
 
 def benchmark():
-    df, fraudsters, legit_high_vol = generate_benchmark_data(10000)
+    # 1. Generate TRAINING Data (Synthetic "Past" Data)
+    print("\n--- Generating Training Data (Historical) ---")
+    df_train, train_fraudsters, _ = generate_benchmark_data(5000)
     
-    print("\n--- Starting Benchmark ---")
+    # Create Labels for Training
+    # Known Fraudsters = 1, Everyone else = 0
+    # In reality, we'd have confirmed fraud labels.
+    labels = {}
+    all_train_accounts = set(df_train['sender_id']) | set(df_train['receiver_id'])
+    for acc in all_train_accounts:
+        labels[acc] = 1 if acc in train_fraudsters else 0
+        
+    # 2. Train the Model
+    from backend.ml.supervised_model import SupervisedFraudModel
+    model = SupervisedFraudModel()
+    model.train(df_train, labels)
+    
+    # 3. Generate TESTING Data (New "Current" Batch)
+    print("\n--- Generating Testing Data (Current) ---")
+    df_test, test_fraudsters, test_legit = generate_benchmark_data(10000)
+    
+    print("\n--- Starting Benchmark on Test Data ---")
     start_time = time.time()
-    results = analyze_transactions(df)
+    
+    # Analyze (Orchestrator will now pick up the trained model)
+    results = analyze_transactions(df_test)
+    
     end_time = time.time()
     
     processing_time = end_time - start_time
@@ -105,22 +127,22 @@ def benchmark():
     for acc in results['suspicious_accounts']:
         detected_accounts.add(acc['account_id'])
         
-    true_positives = len(detected_accounts.intersection(fraudsters))
-    false_positives = len(detected_accounts - fraudsters)
-    false_negatives = len(fraudsters - detected_accounts)
+    true_positives = len(detected_accounts.intersection(test_fraudsters))
+    false_positives = len(detected_accounts - test_fraudsters)
+    false_negatives = len(test_fraudsters - detected_accounts)
     
     precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
     recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
     
-    print(f"\n--- Accuracy Metrics ---")
-    print(f"Precision: {precision:.2%} (Target: > 70%)")
-    print(f"Recall:    {recall:.2%} (Target: > 60%)")
+    print(f"\n--- Accuracy Metrics (XGBoost + Embeddings) ---")
+    print(f"Precision: {precision:.2%} (Target: > 80%)")
+    print(f"Recall:    {recall:.2%} (Target: > 70%)")
     print(f"F1 Score:  {f1:.2f}")
     
     print(f"\n--- False Positive Analysis ---")
     # Check if any Merchants/Payroll were flagged
-    bad_flags = detected_accounts.intersection(legit_high_vol)
+    bad_flags = detected_accounts.intersection(test_legit)
     print(f"Legitimate High-Volume Accounts Flagged: {len(bad_flags)}")
     if bad_flags:
         print(f"  -> FLAGGED: {list(bad_flags)[:5]}")
@@ -128,11 +150,11 @@ def benchmark():
         print("  -> None. (Pass)")
         
     print(f"\n--- Overfitting/Underfitting Check ---")
-    if precision > 0.9 and recall > 0.9:
+    if precision > 0.95 and recall > 0.95:
         print("Suspiciously High Accuracy? Dataset might be too easy or model overfitting to synthetic patterns.")
-    elif precision < 0.5:
+    elif precision < 0.6:
         print("Low Precision -> Potential Underfitting (Too loose)")
-    elif recall < 0.5:
+    elif recall < 0.6:
         print("Low Recall -> Potential Underfitting (Too strict)")
     else:
         print("Balanced Performance. Model seems healthy.")

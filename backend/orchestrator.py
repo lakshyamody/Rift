@@ -26,8 +26,13 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     # 3. Shell Detection
     shells = detect_shells(G, df)
     
-    # 3. ML Anomaly Detection
-    ml_scores = calculate_ml_suspicion_scores(df)
+    # 3. Supervised ML Fraud Detection (XGBoost + Node2Vec)
+    # Using the new SOTA model instead of Isolation Forest
+    from .ml.supervised_model import SupervisedFraudModel
+    
+    # Initialize and Predict
+    xgb_model = SupervisedFraudModel()
+    ml_scores = xgb_model.predict(df)
     
     # 4. Receiver-Side Detection (NEW)
     from .core.profiling import PersonalAmountProfile, compute_s1_score, rapid_inflow_exit_detector
@@ -153,7 +158,7 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
                 elif ring['pattern_type'] == 'layered_shell':
                     patterns.append("shell_member")
         
-        # 1. Sender Side Score (ML + Graph)
+        # 1. Sender Side Score (XGBoost Prob)
         sender_score = ml_scores.get(account, 0)
         
         # 2. Receiver Side Score (S1 + Mule)
