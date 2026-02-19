@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any, Dict
 from datetime import datetime
 
 class AccountSuspicion(BaseModel):
@@ -24,3 +24,4 @@ class DetectionResponse(BaseModel):
     suspicious_accounts: List[AccountSuspicion]
     fraud_rings: List[FraudRing]
     summary: AnalysisSummary
+    graph_data: Optional[Dict[str, Any]] = None

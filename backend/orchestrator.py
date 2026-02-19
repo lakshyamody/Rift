@@ -1,5 +1,6 @@
 import time
 import pandas as pd
+import numpy as np
 from typing import Dict, Any
 
 from .core.graph import build_graph
@@ -7,6 +8,7 @@ from .detectors.circular_fund_routing import detect_cycles
 from .detectors.smurfing_patterns import detect_smurfing
 from .detectors.layered_shell_networks import detect_shells
 from .ml.isolation_forest_anomaly import calculate_ml_suspicion_scores
+from .ml.gnn_model import get_gnn_predictions
 
 def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     start_time = time.time()
@@ -33,6 +35,9 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     # Initialize and Predict
     xgb_model = SupervisedFraudModel()
     ml_scores = xgb_model.predict(df)
+    
+    # 3b. GNN Scores (NEW)
+    gnn_scores = get_gnn_predictions(G, df)
     
     # 4. Receiver-Side Detection (NEW)
     from .core.profiling import PersonalAmountProfile, compute_s1_score, rapid_inflow_exit_detector
@@ -174,9 +179,9 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         if account in rapid_exit_map:
              patterns.append("rapid_exit_detected")
         
-        # Fusion Strategy: MAX(Sender, Receiver)
-        # If you fail EITHER check, you are flagged.
-        base_final = max(sender_score, receiver_score)
+        # Fusion Strategy: Max(XGBoost, GNN, Receiver)
+        gnn_val = gnn_scores.get(account, 0)
+        base_final = max(sender_score, gnn_val, receiver_score)
         
         final_score = base_final
         
@@ -217,6 +222,41 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     # Sort by score
     suspicious_accounts.sort(key=lambda x: x['suspicion_score'], reverse=True)
     
+    # Prepare Graph Visualization Data
+    nodes_data = []
+    for acc in all_accounts:
+        is_suspicious = any(a['account_id'] == acc for a in suspicious_accounts)
+        is_in_ring = acc in account_ring_map
+        
+        color = "#ff4d4d" if (is_suspicious or is_in_ring) else "#4d79ff"
+        
+        nodes_data.append({
+            "id": str(acc),
+            "label": str(acc),
+            "x": np.random.uniform(-100, 100),
+            "y": np.random.uniform(-100, 100),
+            "z": np.random.uniform(-100, 100),
+            "size": 10 if (is_suspicious or is_in_ring) else 5,
+            "color": color,
+            "suspicion_score": max(ml_scores.get(acc, 0), gnn_scores.get(acc, 0), receiver_s1_map.get(acc, 0)),
+            "pattern": account_ring_map.get(acc, "legitimate")
+        })
+        
+    edges_data = []
+    # Deduplicate edges for visualization
+    seen_edges = set()
+    for _, row in df.iterrows():
+        edge_key = (str(row['sender_id']), str(row['receiver_id']))
+        if edge_key not in seen_edges:
+            edges_data.append({
+                "id": f"e_{edge_key[0]}_{edge_key[1]}",
+                "source": edge_key[0],
+                "target": edge_key[1],
+                "size": 1,
+                "color": "#e2e8f0"
+            })
+            seen_edges.add(edge_key)
+
     processing_time = time.time() - start_time
     
     return {
@@ -227,5 +267,9 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
             "suspicious_accounts_flagged": len(suspicious_accounts),
             "fraud_rings_detected": len(fraud_rings),
             "processing_time_seconds": round(processing_time, 4)
+        },
+        "graph_data": {
+            "nodes": nodes_data,
+            "edges": edges_data
         }
     }

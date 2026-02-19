@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+import os
 from fastapi.middleware.cors import CORSMiddleware
 from .models import DetectionResponse, AccountSuspicion, FraudRing, AnalysisSummary
 from .orchestrator import analyze_transactions
@@ -20,6 +21,22 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Money Muling Detection Engine is running in modular mode"}
+
+@app.get("/sample", response_model=DetectionResponse)
+async def analyze_sample():
+    sample_path = "data/test_complex_scenarios.csv"
+    if not os.path.exists(sample_path):
+        raise HTTPException(status_code=404, detail="Sample transactions file not found")
+    
+    try:
+        df = pd.read_csv(sample_path)
+        # Analysis
+        result = analyze_transactions(df)
+        return DetectionResponse(**result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/detect", response_model=DetectionResponse)
 async def detect_money_muling(file: UploadFile = File(...)):
