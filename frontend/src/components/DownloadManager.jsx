@@ -177,7 +177,7 @@ export default function DownloadManager({ exportData, fraudRings, suspiciousAcco
                         <StatCard label="Rings Detected" icon={Network} color="text-red-400" value={fraudRings?.length ?? 0} />
                         <StatCard label="Accounts Flagged" icon={Users} color="text-amber-400" value={suspiciousAccounts?.length ?? 0} />
                         <StatCard label="Patterns Found" icon={AlertTriangle} color="text-yellow-400" value={crossRingPatterns?.length ?? 0} />
-                        <StatCard label="Money detected in Meuling" icon={TrendingDown} color="text-emerald-400"
+                        <StatCard label="Money detected in Muling" icon={TrendingDown} color="text-emerald-400"
                             value={`₹${Number(totalLaundered || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`} />
                     </div>
                 </div>
@@ -233,7 +233,7 @@ export default function DownloadManager({ exportData, fraudRings, suspiciousAcco
                                             <span className="text-[9px] text-slate-600">{ring.member_accounts?.length ?? 0} accounts</span>
                                             {laundered > 0 && (
                                                 <span className="text-[9px] text-slate-600">
-                                                    ₹{Number(laundered).toLocaleString("en-IN", { maximumFractionDigits: 0 })} detected in Meuling
+                                                    ₹{Number(laundered).toLocaleString("en-IN", { maximumFractionDigits: 0 })} detected in Muling
                                                 </span>
                                             )}
                                         </div>
