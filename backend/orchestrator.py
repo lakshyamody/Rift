@@ -1,6 +1,7 @@
 import time
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from typing import Dict, Any
 
 from .core.graph import build_graph
@@ -9,6 +10,11 @@ from .detectors.smurfing_patterns import detect_smurfing
 from .detectors.layered_shell_networks import detect_shells
 from .ml.isolation_forest_anomaly import calculate_ml_suspicion_scores
 from .ml.gnn_model import get_gnn_predictions
+from .ml.reconstruction import classify_node_role, reconstruct_money_trail, generate_crime_narrative
+from .ml.reporting import (
+    build_ring_context, build_system_prompt, analyze_cross_ring_patterns,
+    generate_ring_report, generate_master_report, export_report_json
+)
 
 def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     start_time = time.time()
@@ -101,6 +107,7 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         fraud_rings.append({
             "ring_id": ring_id,
             "member_accounts": cycle,
+            "center_account": cycle[0], # Pick first as representative center
             "pattern_type": "cycle",
             "risk_score": min(90.0 + (len(cycle) * 2), 100.0)
         })
@@ -116,6 +123,7 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         fraud_rings.append({
             "ring_id": ring_id,
             "member_accounts": members,
+            "center_account": pattern['center'], # Explicit center from smurfing detection
             "pattern_type": pattern['type'],
             "risk_score": 95.0 if pattern['type'] == 'fan_in_out' else 85.0
         })
@@ -139,6 +147,7 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         fraud_rings.append({
             "ring_id": ring_id,
             "member_accounts": chain,
+            "center_account": chain[0], # Entry point of the shell network
             "pattern_type": "layered_shell",
             "risk_score": 80.0
         })
@@ -222,14 +231,26 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     # Sort by score
     suspicious_accounts.sort(key=lambda x: x['suspicion_score'], reverse=True)
     
+    # --- Reconstruction Phase ---
+    # 1. Classify roles for all suspicious accounts
+    node_roles = {}
+    for acc in all_accounts:
+        node_roles[acc] = classify_node_role(acc, G, df)
+
+    # 2. Reconstruct narratives for each ring
+    for ring in fraud_rings:
+        trail = reconstruct_money_trail(ring['ring_id'], ring['member_accounts'], df, G, node_roles)
+        ring['reconstruction'] = trail
+        ring['narrative'] = generate_crime_narrative(trail, ring)
+    
     # Prepare Graph Visualization Data
     nodes_data = []
     
     # Identify ring centers
     ring_centers = set()
     for ring in fraud_rings:
-        if ring['member_accounts']:
-            ring_centers.add(ring['member_accounts'][0])
+        if "center_account" in ring:
+            ring_centers.add(ring['center_account'])
 
     print(f"DEBUG: Found {len(fraud_rings)} rings and {len(ring_centers)} ring centers")
 
@@ -253,11 +274,12 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         nodes_data.append({
             "id": str(acc),
             "label": str(acc),
-            "x": float(np.random.uniform(-40, 40)), 
-            "y": float(np.random.uniform(-40, 40)),
-            "z": float(np.random.uniform(-40, 40)),
+            "x": float(np.random.uniform(-30, 30)), # Even tighter initial grouping
+            "y": float(np.random.uniform(-30, 30)),
+            "z": float(np.random.uniform(-30, 30)),
             "size": 12 if (acc in ring_centers or (is_suspicious and not is_in_ring)) else (8 if is_in_ring else 5),
             "color": color,
+            "role": node_roles.get(acc, 'UNKNOWN'),
             "suspicion_score": float(max(ml_scores.get(acc, 0), gnn_scores.get(acc, 0), receiver_s1_map.get(acc, 0).item() if hasattr(receiver_s1_map.get(acc, 0), 'item') else receiver_s1_map.get(acc, 0))),
             "pattern": account_ring_map.get(acc, "legitimate")
         })
@@ -277,6 +299,59 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
             })
             seen_edges.add(edge_key)
 
+    # --- Reporting Phase ---
+    # 1. Build Ring Contexts
+    all_ring_contexts = []
+    ring_reconstructions = []
+    for info in fraud_rings:
+        # Re-derive node scores for reporting (max of all sources)
+        node_scores = {node['id']: node['suspicion_score'] for node in nodes_data}
+        
+        ctx = build_ring_context(
+            info['ring_id'], 
+            info['reconstruction'], 
+            info['narrative'], 
+            node_roles, 
+            node_scores, 
+            info, 
+            df, 
+            fraud_rings
+        )
+        all_ring_contexts.append(ctx)
+        ring_reconstructions.append({
+            'ring_context': ctx,
+            'trail': info['reconstruction'],
+            'sigma_data': {'nodes': nodes_data, 'edges': edges_data} # Placeholder for actual Sigma format if different
+        })
+
+    # 2. Cross-Ring Pattern Analysis
+    cross_ring_patterns = analyze_cross_ring_patterns(all_ring_contexts, df)
+
+    # 3. Build Reports
+    master_report = generate_master_report(all_ring_contexts, cross_ring_patterns)
+    
+    # 4. Prepare Chatbot Payload
+    chatbot_rings = []
+    for rc in all_ring_contexts:
+        sys_prompt = build_system_prompt(rc, all_ring_contexts, cross_ring_patterns)
+        report = generate_ring_report(rc, cross_ring_patterns)
+        chatbot_rings.append({
+            'ring_id': rc['ring_id'],
+            'risk_score': rc['risk_score'],
+            'pattern_type': rc['pattern_type'],
+            'system_prompt': sys_prompt,
+            'ring_report': report,
+            'summary': rc['financial_summary']
+        })
+    
+    chatbot_payload = {
+        'generated_at': datetime.now().isoformat(),
+        'total_rings': len(chatbot_rings),
+        'cross_ring_patterns': cross_ring_patterns,
+        'master_report': master_report,
+        'rings': chatbot_rings
+    }
+
     processing_time = time.time() - start_time
     
     return {
@@ -291,5 +366,8 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
         "graph_data": {
             "nodes": nodes_data,
             "edges": edges_data
-        }
+        },
+        "cross_ring_patterns": cross_ring_patterns,
+        "master_report": master_report,
+        "chatbot_payload": chatbot_payload
     }

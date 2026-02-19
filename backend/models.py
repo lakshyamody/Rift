@@ -13,6 +13,8 @@ class FraudRing(BaseModel):
     member_accounts: List[str]
     pattern_type: str
     risk_score: float
+    reconstruction: Optional[Dict[str, Any]] = None
+    narrative: Optional[str] = None
 
 class AnalysisSummary(BaseModel):
     total_accounts_analyzed: int
@@ -25,3 +27,6 @@ class DetectionResponse(BaseModel):
     fraud_rings: List[FraudRing]
     summary: AnalysisSummary
     graph_data: Optional[Dict[str, Any]] = None
+    cross_ring_patterns: Optional[List[Dict[str, Any]]] = None
+    master_report: Optional[str] = None
+    chatbot_payload: Optional[Dict[str, Any]] = None
