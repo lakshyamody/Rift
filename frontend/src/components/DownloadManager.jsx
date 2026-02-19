@@ -56,8 +56,8 @@ function BulkBtn({ label, desc, loading, loadingKey, myKey, onClick, icon: Icon,
     return (
         <button onClick={onClick} disabled={isDisabled}
             className={`flex flex-col gap-1.5 p-4 rounded-xl border transition-all text-left group ${isLoading
-                    ? "bg-violet-500/20 border-violet-500/40"
-                    : `${accent} hover:border-opacity-60 hover:brightness-110`
+                ? "bg-violet-500/20 border-violet-500/40"
+                : `${accent} hover:border-opacity-60 hover:brightness-110`
                 } ${isDisabled && !isLoading ? "opacity-40" : ""}`}>
             <div className="flex items-center gap-2">
                 {isLoading
@@ -177,7 +177,7 @@ export default function DownloadManager({ exportData, fraudRings, suspiciousAcco
                         <StatCard label="Rings Detected" icon={Network} color="text-red-400" value={fraudRings?.length ?? 0} />
                         <StatCard label="Accounts Flagged" icon={Users} color="text-amber-400" value={suspiciousAccounts?.length ?? 0} />
                         <StatCard label="Patterns Found" icon={AlertTriangle} color="text-yellow-400" value={crossRingPatterns?.length ?? 0} />
-                        <StatCard label="Est. Laundered" icon={TrendingDown} color="text-emerald-400"
+                        <StatCard label="Money detected in Meuling" icon={TrendingDown} color="text-emerald-400"
                             value={`₹${Number(totalLaundered || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`} />
                     </div>
                 </div>
@@ -233,7 +233,7 @@ export default function DownloadManager({ exportData, fraudRings, suspiciousAcco
                                             <span className="text-[9px] text-slate-600">{ring.member_accounts?.length ?? 0} accounts</span>
                                             {laundered > 0 && (
                                                 <span className="text-[9px] text-slate-600">
-                                                    ₹{Number(laundered).toLocaleString("en-IN", { maximumFractionDigits: 0 })} laundered
+                                                    ₹{Number(laundered).toLocaleString("en-IN", { maximumFractionDigits: 0 })} detected in Meuling
                                                 </span>
                                             )}
                                         </div>

@@ -119,7 +119,7 @@ def build_system_prompt(ring_context, all_ring_contexts, cross_ring_patterns):
         other_rings_summary += (
             f"- {other['ring_id']}: {other['pattern_type']}, "
             f"risk={other['risk_score']}, "
-            f"\u20B9{other['financial_summary']['estimated_laundered']:,.0f} laundered, "
+            f"\u20B9{other['financial_summary']['estimated_laundered']:,.0f} detected in Meuling, "
             f"{other['network_structure']['member_count']} accounts\n"
         )
 
@@ -142,7 +142,7 @@ def build_system_prompt(ring_context, all_ring_contexts, cross_ring_patterns):
         profiles_list.append(profile)
     profiles_str = "\n".join(profiles_list)
 
-    system_prompt = f"""You are a financial crime analyst AI assistant specializing in money laundering investigation. You have been given full details of a detected fraud ring and must answer investigator questions accurately and concisely.
+    system_prompt = f"""You are a financial crime analyst AI assistant specializing in money muling investigation. You have been given full details of a detected fraud ring and must answer investigator questions accurately and concisely.
 
 CURRENT RING: {rc['ring_id']}
 Pattern Type: {rc['pattern_type']}
@@ -150,7 +150,7 @@ Risk Score: {rc['risk_score']}/100
 Detected Techniques: {', '.join(pat)}
 
 FINANCIAL SUMMARY:
-- Total funds laundered: ₹{fs['estimated_laundered']:,.2f}
+- Total money detected in Meuling: ₹{fs['estimated_laundered']:,.2f}
 - External inflow: ₹{fs['external_inflow']:,.2f}
 - Internal circulation: ₹{fs['total_internal_flow']:,.2f}
 - Number of transactions: {fs['num_transactions']}
@@ -265,8 +265,8 @@ def generate_ring_report(rc, cross_ring_patterns):
         f"Risk Score: {rc['risk_score']}/100",
         "============================================================",
         "EXECUTIVE SUMMARY",
-        f"{rc['ring_id']} is a {rc['pattern_type']} money laundering ring involving {ns['member_count']} accounts.",
-        f"Laundered an estimated \u20B9{fs['estimated_laundered']:,.2f} over {fs['duration_hours']} hours.",
+        f"{rc['ring_id']} is a {rc['pattern_type']} money muling ring involving {ns['member_count']} accounts.",
+        f"Money detected in Meuling: \u20B9{fs['estimated_laundered']:,.2f} (estimated) over {fs['duration_hours']} hours.",
         "============================================================",
         "FINANCIAL ANALYSIS",
         f"External Inflow: \u20B9{fs['external_inflow']:,.2f}",
@@ -288,7 +288,7 @@ def generate_master_report(all_ring_contexts, cross_ring_patterns):
     lines = [
         "MASTER INVESTIGATION REPORT",
         f"Total Rings Detected: {len(all_ring_contexts)}",
-        f"Total Estimated Laundered: \u20B9{total_laundered:,.2f}",
+        f"Total Money Detected in Meuling: \u20B9{total_laundered:,.2f}",
         "============================================================",
         "NETWORK-WIDE PATTERNS"
     ]

@@ -39,7 +39,7 @@ const QUESTIONS = {
     fan_out: ["Who is the orchestrator?", "How many accounts received money?", "Is there a structuring pattern?", "Where did dispersed funds go?"],
     fan_in: ["Which accounts fed the collector?", "Are the senders related?", "How fast did money move after aggregation?"],
     shell: ["How many shell hops?", "What is the entry and exit point?", "Which shell account is most suspicious?"],
-    default: ["Summarize this fraud ring.", "Which accounts should be frozen first?", "What laundering techniques were used?", "Are there connections to other rings?", "What should investigators do next?", "Which account has the highest suspicion score?", "How long did this operation run?", "What is the total amount laundered?"],
+    default: ["Summarize this fraud ring.", "Which accounts should be frozen first?", "What laundering techniques were used?", "Are there connections to other rings?", "What should investigators do next?", "Which account has the highest suspicion score?", "How long did this operation run?", "What is the total money detected in Meuling?"],
 };
 
 function getSuggestions(patternType) {
@@ -149,7 +149,7 @@ function ReportView({ ringData, onDownloadTxt }) {
                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Financial Summary</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                        <StatCard label="Estimated Laundered" icon={DollarSign} color="text-red-400"
+                        <StatCard label="Money detected in Meuling" icon={DollarSign} color="text-red-400"
                             value={`₹${fmt(fs.estimated_laundered)}`} sub="out-of-ring funds" />
                         <StatCard label="External Inflow" icon={ArrowRight} color="text-orange-400"
                             value={`₹${fmt(fs.external_inflow)}`} sub="injected from outside" />
@@ -398,7 +398,7 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
             {activeTab === "chat" && (
                 <div className="flex-none grid grid-cols-3 gap-2 px-5 py-3 border-b border-slate-800/40 bg-slate-950/30">
                     {[
-                        { label: "Laundered", icon: DollarSign, color: "text-red-400", val: `₹${fmt(fs.estimated_laundered)}` },
+                        { label: "Detected in Meuling", icon: DollarSign, color: "text-red-400", val: `₹${fmt(fs.estimated_laundered)}` },
                         { label: "Transactions", icon: Activity, color: "text-blue-400", val: fs.num_transactions ?? "—" },
                         { label: "Duration", icon: Clock, color: "text-amber-400", val: fs.duration_hours != null ? `${fs.duration_hours}h` : "—" },
                     ].map(({ label, icon: Icon, color, val }) => (
