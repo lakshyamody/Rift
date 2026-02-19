@@ -196,14 +196,14 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
             elif any('fan_out_member' in p for p in patterns):
                 pass 
             else:
-                final_score = max(final_score, 75.0) # Members get min 75
+                final_score = max(final_score, 65.0) # Members get min 65
         
         # Post-Processing Whitelist for High Volume Merchants/Payroll
         if not patterns and final_score > 60:
             pass
 
-        # Reporting Threshold
-        if final_score >= 75:
+        # Reporting Threshold (Lowered from 75 to 55 for higher sensitivity)
+        if final_score >= 55:
             # Metadata construction
             meta = {}
             if account in mule_map:
@@ -224,19 +224,38 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     
     # Prepare Graph Visualization Data
     nodes_data = []
+    
+    # Identify ring centers
+    ring_centers = set()
+    for ring in fraud_rings:
+        if ring['member_accounts']:
+            # Use the first account in the list as the 'center' for coloring purposes
+            ring_centers.add(ring['member_accounts'][0])
+
     for acc in all_accounts:
-        is_suspicious = any(a['account_id'] == acc for a in suspicious_accounts)
-        is_in_ring = acc in account_ring_map
+        suspicious_info = next((a for a in suspicious_accounts if a['account_id'] == acc), None)
+        is_suspicious = suspicious_info is not None
+        ring_id = account_ring_map.get(acc)
+        is_in_ring = ring_id is not None
         
-        color = "#ff4d4d" if (is_suspicious or is_in_ring) else "#4d79ff"
-        
+        # New Coloring Logic
+        if is_in_ring:
+            if acc in ring_centers:
+                color = "#ff4d4d"  # Red for Ring Center
+            else:
+                color = "#fbbf24"  # Yellow for Ring Member
+        elif is_suspicious:
+            color = "#ff4d4d"      # Red for Suspicious (not in ring)
+        else:
+            color = "#3b82f6"      # Blue for Legitimate
+            
         nodes_data.append({
             "id": str(acc),
             "label": str(acc),
-            "x": np.random.uniform(-100, 100),
-            "y": np.random.uniform(-100, 100),
-            "z": np.random.uniform(-100, 100),
-            "size": 10 if (is_suspicious or is_in_ring) else 5,
+            "x": np.random.uniform(-50, 50), # Tighter initial spread
+            "y": np.random.uniform(-50, 50),
+            "z": np.random.uniform(-50, 50),
+            "size": 12 if (acc in ring_centers or (is_suspicious and not is_in_ring)) else (8 if is_in_ring else 5),
             "color": color,
             "suspicion_score": max(ml_scores.get(acc, 0), gnn_scores.get(acc, 0), receiver_s1_map.get(acc, 0)),
             "pattern": account_ring_map.get(acc, "legitimate")

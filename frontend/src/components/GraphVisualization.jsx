@@ -26,6 +26,10 @@ const GraphVisualization = ({ data }) => {
     useEffect(() => {
         // Auto-fit graph on data load
         if (fgRef.current && graphData.nodes.length > 0) {
+            // Configure forces for tighter clustering
+            fgRef.current.d3Force("link").distance(30).strength(1.5);
+            fgRef.current.d3Force("charge").strength(-80);
+
             // Small delay to ensure engine has started
             setTimeout(() => {
                 fgRef.current.zoomToFit(400, 100);
@@ -72,17 +76,21 @@ const GraphVisualization = ({ data }) => {
 
             <div className="absolute bottom-4 left-4 z-10 bg-slate-900/80 backdrop-blur-md p-4 rounded-lg border border-slate-700 shadow-xl pointer-events-none">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">3D GNN Legend</h4>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col space-y-2">
                     <div className="flex items-center space-x-2">
                         <div className="w-3 h-3 rounded-full bg-[#ff4d4d]"></div>
-                        <span className="text-sm text-slate-300">Suspicious / Ring</span>
+                        <span className="text-xs text-slate-300">Ring Center / Suspicious</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-[#4d79ff]"></div>
-                        <span className="text-sm text-slate-300">Legitimate</span>
+                        <div className="w-3 h-3 rounded-full bg-[#fbbf24]"></div>
+                        <span className="text-xs text-slate-300">Ring Member</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
+                        <span className="text-xs text-slate-300">Legitimate</span>
                     </div>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2 italic">Drag to rotate • Scroll to zoom • Click node to focus</p>
+                <p className="text-[9px] text-slate-500 mt-2 italic">Drag to rotate • Scroll to zoom • Click node to focus</p>
             </div>
 
             <div className="absolute top-4 right-4 z-10">

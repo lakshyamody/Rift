@@ -12,14 +12,17 @@ function App() {
   }, []);
 
   const loadSampleData = async () => {
+    console.log("Fetching sample data...");
     setLoading(true);
     setError(null);
     try {
       const response = await fetch("http://localhost:8000/sample");
-      if (!response.ok) throw new Error("Failed to load sample data");
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
+      console.log("Data received:", result.summary);
       setData(result);
     } catch (err) {
+      console.error("Fetch error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
