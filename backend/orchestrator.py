@@ -335,13 +335,18 @@ def analyze_transactions(df: pd.DataFrame) -> Dict[str, Any]:
     for rc in all_ring_contexts:
         sys_prompt = build_system_prompt(rc, all_ring_contexts, cross_ring_patterns)
         report = generate_ring_report(rc, cross_ring_patterns)
+        ns = rc.get('network_structure', {})
         chatbot_rings.append({
             'ring_id': rc['ring_id'],
             'risk_score': rc['risk_score'],
             'pattern_type': rc['pattern_type'],
             'system_prompt': sys_prompt,
             'ring_report': report,
-            'summary': rc['financial_summary']
+            'summary': rc['financial_summary'],
+            'narrative': rc.get('narrative', ''),
+            'entry_point': ns.get('entry_point', 'UNKNOWN'),
+            'exit_point': ns.get('exit_point', 'UNKNOWN'),
+            'role_breakdown': ns.get('role_breakdown', {}),
         })
     
     chatbot_payload = {

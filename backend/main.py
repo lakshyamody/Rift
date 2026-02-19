@@ -83,7 +83,7 @@ async def analyze_sample():
 
 @app.get("/report.json")
 async def download_report():
-    """Returns the exact spec-compliant JSON format for submission/download."""
+    """Returns spec-compliant JSON as a proper downloadable file."""
     global _last_result_cache
     if _last_result_cache is None:
         sample_path = "data/test_complex_scenarios.csv"
@@ -92,11 +92,31 @@ async def download_report():
         df = pd.read_csv(sample_path)
         _last_result_cache = analyze_transactions(df)
 
+    import json
     payload = _build_report_payload(_last_result_cache)
-    return JSONResponse(
-        content=payload,
-        headers={"Content-Disposition": "attachment; filename=fraud_report.json"}
+    json_bytes = json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
+
+    from fastapi.responses import Response
+    return Response(
+        content=json_bytes,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": 'attachment; filename="fraud_report.json"',
+            "Content-Length": str(len(json_bytes)),
+        }
     )
+
+@app.get("/report-data")
+async def get_report_data():
+    """Returns the same payload for inline frontend use (no download header)."""
+    global _last_result_cache
+    if _last_result_cache is None:
+        sample_path = "data/test_complex_scenarios.csv"
+        if not os.path.exists(sample_path):
+            raise HTTPException(status_code=404, detail="No analysis available.")
+        df = pd.read_csv(sample_path)
+        _last_result_cache = analyze_transactions(df)
+    return JSONResponse(content=_build_report_payload(_last_result_cache))
 
 @app.post("/detect", response_model=DetectionResponse)
 async def detect_money_muling(file: UploadFile = File(...)):

@@ -6,10 +6,9 @@ import {
   MessageSquare, Download, Table2
 } from "lucide-react";
 
-const GEMINI_API_KEY = "AIzaSyAzerISaRYQV6H8xzq2f2K2ZB_M0k7yRBQ";
-if (!localStorage.getItem("gemini_api_key")) {
-  localStorage.setItem("gemini_api_key", GEMINI_API_KEY);
-}
+const GEMINI_API_KEY = "AIzaSyAUDHBZ4sl2KXRkwifZCHF3WwTlUV2B7n8";
+// Always sync the key into localStorage
+localStorage.setItem("gemini_api_key", GEMINI_API_KEY);
 
 const RISK_COLOR = (score) =>
   score >= 90 ? "text-red-400" : score >= 75 ? "text-orange-400" : "text-yellow-400";
@@ -218,8 +217,8 @@ export default function App() {
               {data?.fraud_rings?.length > 0 ? data.fraud_rings.map(ring => (
                 <div key={ring.ring_id}
                   className={`rounded-xl border p-3 transition-all ${activeRingId === ring.ring_id
-                      ? "bg-violet-500/8 border-violet-500/30 shadow-sm shadow-violet-500/10"
-                      : "bg-slate-800/25 border-slate-700/40 hover:bg-slate-800/50 hover:border-slate-700/60"
+                    ? "bg-violet-500/8 border-violet-500/30 shadow-sm shadow-violet-500/10"
+                    : "bg-slate-800/25 border-slate-700/40 hover:bg-slate-800/50 hover:border-slate-700/60"
                     }`}>
                   <div className="flex items-start justify-between gap-2 mb-1.5">
                     <span className="font-mono text-[10px] font-bold text-slate-200 leading-tight">{ring.ring_id}</span>
@@ -233,15 +232,15 @@ export default function App() {
                   <div className="flex gap-1.5">
                     <button onClick={() => startReconstruction(ring.ring_id)}
                       className={`flex-1 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${activeRingId === ring.ring_id && isPlaying
-                          ? "bg-violet-600 text-white"
-                          : "bg-slate-700/60 hover:bg-violet-700 text-slate-500 hover:text-white"
+                        ? "bg-violet-600 text-white"
+                        : "bg-slate-700/60 hover:bg-violet-700 text-slate-500 hover:text-white"
                         }`}>
                       {activeRingId === ring.ring_id && isPlaying ? "● Playing" : "▶ Replay"}
                     </button>
                     <button onClick={() => openChatbot(ring.ring_id)}
                       className={`flex-1 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${activeRingId === ring.ring_id && showChatbot
-                          ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
-                          : "bg-slate-700/60 hover:bg-slate-700 text-slate-500 hover:text-white"
+                        ? "bg-violet-500/20 text-violet-300 border border-violet-500/30"
+                        : "bg-slate-700/60 hover:bg-slate-700 text-slate-500 hover:text-white"
                         }`}>
                       <MessageSquare className="w-2 h-2" /> Analyze
                     </button>
