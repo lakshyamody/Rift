@@ -12,7 +12,7 @@ const ROLE_COLORS = {
     'UNKNOWN': '#94a3b8'        // Slate
 };
 
-const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = -1 }) => {
+const GraphVisualization = ({ data, activeReconstruction = null }) => {
     const fgRef = useRef();
 
     // Memoize graph data for force-graph
@@ -20,10 +20,20 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
         if (!data) return { nodes: [], links: [] };
 
         const isReconstructing = activeReconstruction !== null;
-        const ringAccountIds = isReconstructing ? new Set([
-            ...activeReconstruction.timeline.map(t => t.sender),
-            ...activeReconstruction.timeline.map(t => t.receiver)
-        ]) : new Set();
+
+        // Find center accounts (orchestrators/collectors) in the reconstruction
+        const ringCenters = new Set();
+        const regularMembers = new Set();
+
+        if (isReconstructing) {
+            activeReconstruction.timeline.forEach(t => {
+                if (['ORCHESTRATOR', 'COLLECTOR'].includes(t.sender_role)) ringCenters.add(t.sender);
+                if (['ORCHESTRATOR', 'COLLECTOR'].includes(t.receiver_role)) ringCenters.add(t.receiver);
+
+                regularMembers.add(t.sender);
+                regularMembers.add(t.receiver);
+            });
+        }
 
         return {
             nodes: data.nodes.map(node => {
@@ -31,12 +41,14 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 let size = node.size || 5;
 
                 if (isReconstructing) {
-                    const role = node.role || 'UNKNOWN';
-                    if (ringAccountIds.has(node.id)) {
-                        color = ROLE_COLORS[role] || ROLE_COLORS.UNKNOWN;
+                    if (ringCenters.has(node.id)) {
+                        color = '#ff4d4d'; // Red for centers
+                        size = size * 1.5;
+                    } else if (regularMembers.has(node.id)) {
+                        color = '#fbbf24'; // Yellow for members
                         size = size * 1.2;
                     } else {
-                        color = '#1e293b'; // Grey for non-ring nodes
+                        color = '#1e293b'; // Grey for others
                     }
                 }
 
@@ -71,7 +83,7 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 };
             })
         };
-    }, [data, activeReconstruction, currentFrame]);
+    }, [data, activeReconstruction]);
 
     useEffect(() => {
         // Auto-fit graph on data load
@@ -80,24 +92,17 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 const linkForce = fgRef.current.d3Force("link");
                 if (linkForce) linkForce.distance(15).strength(2.5);
                 const chargeForce = fgRef.current.d3Force("charge");
-                if (chargeForce) chargeForce.strength(-25); // Reduced repulsion to bring clusters closer
+                if (chargeForce) chargeForce.strength(-25);
                 const centerForce = fgRef.current.d3Force("center");
-                if (centerForce) centerForce.strength(1.5); // Stronger centering force
+                if (centerForce) centerForce.strength(1.5);
             } catch (e) {
                 console.warn("Force initialization pending...", e);
             }
 
-            // Fit view on load or when switching modes
-            if (!activeReconstruction) {
-                setTimeout(() => {
-                    if (fgRef.current) fgRef.current.zoomToFit(600, 100);
-                }, 800);
-            } else {
-                // Keep Fit View even when reconstruction starts
-                setTimeout(() => {
-                    if (fgRef.current) fgRef.current.zoomToFit(600, 100);
-                }, 100);
-            }
+            // Always fit view when reconstruction state changes or data loads
+            setTimeout(() => {
+                if (fgRef.current) fgRef.current.zoomToFit(600, 100);
+            }, activeReconstruction ? 100 : 800);
         }
     }, [graphData, activeReconstruction]);
 
@@ -141,49 +146,30 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 }}
             />
 
-            {/* Narrative Overlay */}
-            {activeReconstruction && currentFrame >= 0 && (
-                <div className="absolute top-4 left-4 right-4 z-20 flex justify-center pointer-events-none">
-                    <div className="bg-slate-900/90 backdrop-blur-md border border-primary/30 p-4 rounded-xl shadow-2xl max-w-2xl w-full animate-in slide-in-from-top-4 duration-500">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Reconstructing {activeReconstruction.ring_id}</span>
-                            <span className="text-[10px] font-mono text-slate-500">Step {currentFrame + 1} of {activeReconstruction.timeline.length}</span>
-                        </div>
-                        <div className="text-sm font-medium text-slate-200">
-                            {activeReconstruction.timeline[currentFrame].sender} <span className="text-primary mx-1">→</span> ₹{activeReconstruction.timeline[currentFrame].amount.toLocaleString()} <span className="text-primary mx-1">→</span> {activeReconstruction.timeline[currentFrame].receiver}
-                        </div>
-                        <div className="mt-1 text-[11px] text-slate-400 italic">
-                            {ROLE_COLORS[activeReconstruction.timeline[currentFrame].sender_role] ? activeReconstruction.timeline[currentFrame].sender_role : 'SENDER'} is transferring funds to {ROLE_COLORS[activeReconstruction.timeline[currentFrame].receiver_role] ? activeReconstruction.timeline[currentFrame].receiver_role : 'RECEIVER'}
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="absolute bottom-4 left-4 z-10 bg-slate-900/80 backdrop-blur-md p-4 rounded-lg border border-slate-700 shadow-xl pointer-events-none">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">{activeReconstruction ? 'Role Legend' : 'Nacht Detect Legend'}</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    {activeReconstruction ? 'Ring Investigation Legend' : 'Nacht Detect Legend'}
+                </h4>
                 <div className="flex flex-col space-y-2">
-                    {activeReconstruction ? (
-                        Object.entries(ROLE_COLORS).map(([role, color]) => (
-                            <div key={role} className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></div>
-                                <span className="text-[10px] text-slate-300 uppercase font-bold">{role.replace('_', ' ')}</span>
-                            </div>
-                        ))
-                    ) : (
-                        <>
-                            <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full bg-[#ff4d4d]"></div>
-                                <span className="text-xs text-slate-300">Ring Center / Suspicious</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full bg-[#fbbf24]"></div>
-                                <span className="text-xs text-slate-300">Ring Member</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
-                                <span className="text-xs text-slate-300">Legitimate</span>
-                            </div>
-                        </>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full bg-[#ff4d4d]"></div>
+                        <span className="text-xs text-slate-300">Ring Center / Orchestrator</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full bg-[#fbbf24]"></div>
+                        <span className="text-xs text-slate-300">Ring Member / Muling Account</span>
+                    </div>
+                    {!activeReconstruction && (
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
+                            <span className="text-xs text-slate-300">Other Network Nodes</span>
+                        </div>
+                    )}
+                    {activeReconstruction && (
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 rounded-full bg-[#1e293b]"></div>
+                            <span className="text-xs text-slate-300">Non-Involved Accounts</span>
+                        </div>
                     )}
                 </div>
                 <p className="text-[9px] text-slate-500 mt-2 italic">Drag to rotate • Scroll to zoom • Click node to focus</p>

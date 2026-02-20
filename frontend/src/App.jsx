@@ -58,8 +58,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeRingId, setActiveRingId] = useState(null);
-  const [currentFrame, setCurrentFrame] = useState(-1);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [showTable, setShowTable] = useState(false);
 
@@ -75,27 +73,10 @@ export default function App() {
     finally { setLoading(false); }
   };
 
-  // Animation engine
-  React.useEffect(() => {
-    let t;
-    if (isPlaying && activeRingId && data) {
-      const ring = data.fraud_rings.find(r => r.ring_id === activeRingId);
-      if (ring?.reconstruction) {
-        t = setInterval(() => {
-          setCurrentFrame(p => {
-            if (p >= ring.reconstruction.timeline.length - 1) { setIsPlaying(false); return p; }
-            return p + 1;
-          });
-        }, 1500);
-      }
-    }
-    return () => clearInterval(t);
-  }, [isPlaying, activeRingId, data]);
-
-  const startReconstruction = (id) => { setActiveRingId(id); setCurrentFrame(0); setIsPlaying(true); setShowChatbot(false); setShowTable(false); };
-  const openChatbot = (id) => { setActiveRingId(id); setShowChatbot(true); setIsPlaying(false); setCurrentFrame(-1); setShowTable(false); };
+  const startReconstruction = (id) => { setActiveRingId(id); setShowChatbot(false); setShowTable(false); };
+  const openChatbot = (id) => { setActiveRingId(id); setShowChatbot(true); setShowTable(false); };
   const closeChatbot = () => setShowChatbot(false);
-  const stopAll = () => { setActiveRingId(null); setCurrentFrame(-1); setIsPlaying(false); setShowChatbot(false); };
+  const stopAll = () => { setActiveRingId(null); setShowChatbot(false); };
 
   const activeRing = data?.fraud_rings?.find(r => r.ring_id === activeRingId);
   const activeChatbotRing = data?.chatbot_payload?.rings?.find(r => r.ring_id === activeRingId);
@@ -106,7 +87,7 @@ export default function App() {
     : showTable
       ? { label: "Table View", cls: "bg-blue-900/20 text-blue-400 border-blue-500/30", dot: "bg-blue-400" }
       : activeRingId
-        ? { label: "Reconstruction", cls: "bg-red-900/20 text-red-400 border-red-500/30", dot: "bg-red-400" }
+        ? { label: "Fraud Ring View", cls: "bg-red-900/20 text-red-400 border-red-500/30", dot: "bg-red-400" }
         : { label: "3D Spatial Engine", cls: "bg-violet-900/20 text-violet-400 border-violet-500/30", dot: "bg-violet-400" };
 
   const mainTitle = showChatbot
@@ -216,11 +197,11 @@ export default function App() {
                   </p>
                   <div className="flex gap-1.5">
                     <button onClick={() => startReconstruction(ring.ring_id)}
-                      className={`flex-1 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${activeRingId === ring.ring_id && isPlaying
+                      className={`flex-1 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all ${activeRingId === ring.ring_id && !showChatbot
                         ? "bg-violet-600 text-white"
                         : "bg-slate-700/60 hover:bg-violet-700 text-slate-500 hover:text-white"
                         }`}>
-                      {activeRingId === ring.ring_id && isPlaying ? "● Playing" : "▶ Replay"}
+                      {activeRingId === ring.ring_id && !showChatbot ? "● Active" : "▶ Replay"}
                     </button>
                     <button onClick={() => openChatbot(ring.ring_id)}
                       className={`flex-1 py-1.5 rounded-lg text-[8px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${activeRingId === ring.ring_id && showChatbot
@@ -279,7 +260,6 @@ export default function App() {
               <GraphVisualization
                 data={data?.graph_data}
                 activeReconstruction={activeRing?.reconstruction}
-                currentFrame={currentFrame}
               />
             )}
           </div>
