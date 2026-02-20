@@ -19,8 +19,11 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
     const graphData = useMemo(() => {
         if (!data) return { nodes: [], links: [] };
 
-        const isReconstructing = activeReconstruction !== null && currentFrame >= 0;
-        const currentTx = isReconstructing ? activeReconstruction.timeline[currentFrame] : null;
+        const isReconstructing = activeReconstruction !== null;
+        const ringAccountIds = isReconstructing ? new Set([
+            ...activeReconstruction.timeline.map(t => t.sender),
+            ...activeReconstruction.timeline.map(t => t.receiver)
+        ]) : new Set();
 
         return {
             nodes: data.nodes.map(node => {
@@ -29,14 +32,11 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
 
                 if (isReconstructing) {
                     const role = node.role || 'UNKNOWN';
-                    color = ROLE_COLORS[role] || ROLE_COLORS.UNKNOWN;
-
-                    // Highlight sender/receiver of current frame
-                    if (currentTx && (node.id === currentTx.sender || node.id === currentTx.receiver)) {
-                        size = size * 1.5;
-                    } else if (!activeReconstruction.timeline.some(t => t.sender === node.id || t.receiver === node.id)) {
-                        // Dim nodes not in the ring
-                        color = '#1e293b';
+                    if (ringAccountIds.has(node.id)) {
+                        color = ROLE_COLORS[role] || ROLE_COLORS.UNKNOWN;
+                        size = size * 1.2;
+                    } else {
+                        color = '#1e293b'; // Grey for non-ring nodes
                     }
                 }
 
@@ -51,15 +51,15 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 let width = 1;
 
                 if (isReconstructing) {
-                    color = "#1e293b"; // Dim by default
-                    if (currentTx && edge.source === currentTx.sender && edge.target === currentTx.receiver) {
-                        color = "#ff0000";
-                        width = 4;
-                    } else if (activeReconstruction.timeline.some(t =>
+                    const isInRing = activeReconstruction.timeline.some(t =>
                         (t.sender === edge.source && t.receiver === edge.target)
-                    )) {
-                        color = "#475569"; // Highlighted path
-                        width = 2;
+                    );
+                    if (isInRing) {
+                        color = "#ff4d4f"; // Highlighted ring link
+                        width = 2.5;
+                    } else {
+                        color = "#1e293b"; // Dim non-ring link
+                        width = 1;
                     }
                 }
 
@@ -87,18 +87,16 @@ const GraphVisualization = ({ data, activeReconstruction = null, currentFrame = 
                 console.warn("Force initialization pending...", e);
             }
 
-            // If we just started a reconstruction, focus on the first node
-            if (activeReconstruction && currentFrame === 0 && fgRef.current) {
-                const firstNodeId = activeReconstruction.timeline[0].sender;
-                const node = graphData.nodes.find(n => n.id === firstNodeId);
-                if (node) {
-                    const distance = 150;
-                    fgRef.current.cameraPosition({ x: node.x, y: node.y, z: node.z + distance }, node, 2000);
-                }
-            } else if (!activeReconstruction) {
+            // Fit view on load or when switching modes
+            if (!activeReconstruction) {
                 setTimeout(() => {
                     if (fgRef.current) fgRef.current.zoomToFit(600, 100);
                 }, 800);
+            } else {
+                // Keep Fit View even when reconstruction starts
+                setTimeout(() => {
+                    if (fgRef.current) fgRef.current.zoomToFit(600, 100);
+                }, 100);
             }
         }
     }, [graphData, activeReconstruction]);
