@@ -103,9 +103,6 @@ export default function App() {
       {/* ── Header ── */}
       <header className="flex-none border-b border-slate-800/60 bg-slate-900/60 backdrop-blur-md px-6 py-3.5 flex items-center justify-between z-50">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-violet-600/20">
-            <ShieldAlert className="w-5 h-5 text-white" />
-          </div>
           <div>
             <h1 className="text-base font-extrabold tracking-tight">Nacht <span className="text-violet-400">Detect</span></h1>
             <p className="text-[10px] text-slate-500 font-medium">Graph Neural Network Fraud Detection</p>
