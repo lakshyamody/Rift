@@ -64,6 +64,9 @@ def build_ring_context(ring_id, trail, narrative, node_roles, node_scores, ring_
             'passthrough_pct': pt_pct,
         }
 
+    # Build sigma_data for the GNNReplay component
+    sigma_data = _build_sigma_data(ring_id, trail, node_roles)
+
     # Build the context dict
     context = {
         'ring_id'      : ring_id,
@@ -87,7 +90,7 @@ def build_ring_context(ring_id, trail, narrative, node_roles, node_scores, ring_
             'member_count'    : len(ring_members),
             'entry_point'     : trail['entry_point'] if trail else 'UNKNOWN',
             'exit_point'      : trail['exit_point'] if trail else 'UNKNOWN',
-            'dominant_path'   : [str(x) for x in trail['timeline'][0:5]] if trail else [], # simplified path
+            'dominant_path'   : [str(x['sender']) for x in trail['timeline'][0:5]] if trail else [], # simplified path
             'role_breakdown'  : {
                 role: [str(a) for a in ring_members if node_roles.get(a) == role]
                 for role in ['ORCHESTRATOR','COLLECTOR','SHELL','MULE','EXIT_POINT','RECRUITER']
@@ -95,12 +98,61 @@ def build_ring_context(ring_id, trail, narrative, node_roles, node_scores, ring_
         },
 
         'timeline'       : trail['timeline'] if trail else [],
+        'sigma_data'     : sigma_data,
         'account_profiles': account_summaries,
         'cross_ring_links': shared_accounts,
         'narrative'      : narrative,
     }
 
     return context
+
+def _build_sigma_data(ring_id, trail, node_roles):
+    """
+    Builds the sigma_data structure for the GNNReplay component.
+    """
+    if not trail or 'timeline' not in trail:
+        return None
+
+    involved_nodes = set()
+    for entry in trail['timeline']:
+        involved_nodes.add(str(entry['sender']))
+        involved_nodes.add(str(entry['receiver']))
+
+    nodes = []
+    for node_id in involved_nodes:
+        role = node_roles.get(node_id, node_roles.get(int(node_id) if node_id.isdigit() else node_id, 'UNKNOWN'))
+        nodes.append({
+            "id": node_id,
+            "role": role,
+            "size": 10 if role in ['ORCHESTRATOR', 'COLLECTOR'] else 6
+        })
+
+    frames = []
+    cumulative = 0
+    for i, entry in enumerate(trail['timeline']):
+        cumulative += entry['amount']
+        
+        sender_role = entry.get('sender_role', 'UNKNOWN')
+        receiver_role = entry.get('receiver_role', 'UNKNOWN')
+        
+        narrative = f"{sender_role} ({entry['sender']}) → ₹{entry['amount']:,.0f} → {receiver_role} ({entry['receiver']})"
+        
+        frames.append({
+            "highlight_nodes": [str(entry['sender']), str(entry['receiver'])],
+            "active_edge": {
+                "source": str(entry['sender']),
+                "target": str(entry['receiver'])
+            },
+            "narrative_line": narrative,
+            "timestamp": f"Step {i+1}",
+            "cumulative_amount": round(float(cumulative), 2)
+        })
+
+    return {
+        "ring_id": ring_id,
+        "nodes": nodes,
+        "frames": frames
+    }
 
 def build_system_prompt(ring_context, all_ring_contexts, cross_ring_patterns):
     """

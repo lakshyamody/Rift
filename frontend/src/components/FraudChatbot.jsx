@@ -6,6 +6,8 @@ import {
     ArrowUpRight, Lock, Eye, Layers, CheckCircle
 } from "lucide-react";
 import { geminiStream, getApiKey } from "../gemini";
+import ReconstructionSummary from "./ReconstructionSummary";
+import GNNReplay from "./GNNReplay";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // API key lives in frontend/.env (VITE_GEMINI_API_KEY) — never hardcoded
@@ -27,6 +29,7 @@ const ROLE_STYLE = {
 
 const TABS = [
     { id: "chat", icon: MessageCircle, label: "Investigate" },
+    { id: "gnn", icon: Network, label: "Graph" },
     { id: "report", icon: FileText, label: "Report" },
     { id: "patterns", icon: Network, label: "Cross-Ring" },
 ];
@@ -392,24 +395,8 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                 </div>
             </div>
 
-            {/* ── Stats strip (chat tab only) ─────────────────────────────────────── */}
-            {activeTab === "chat" && (
-                <div className="flex-none grid grid-cols-3 gap-2 px-5 py-3 border-b border-slate-800/40 bg-slate-950/30">
-                    {[
-                        { label: "Detected in Muling", icon: DollarSign, color: "text-red-400", val: `₹${fmt(fs.estimated_laundered)}` },
-                        { label: "Transactions", icon: Activity, color: "text-blue-400", val: fs.num_transactions ?? "—" },
-                        { label: "Duration", icon: Clock, color: "text-amber-400", val: fs.duration_hours != null ? `${fs.duration_hours}h` : "—" },
-                    ].map(({ label, icon: Icon, color, val }) => (
-                        <div key={label} className="bg-slate-900/50 border border-slate-800/50 rounded-xl px-3 py-2 flex items-center gap-2">
-                            <Icon className={`w-3.5 h-3.5 shrink-0 ${color}`} />
-                            <div>
-                                <div className="text-[8px] uppercase tracking-widest text-slate-700 font-bold">{label}</div>
-                                <div className={`text-[11px] font-bold ${color}`}>{val}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {/* ── RECONSTRUCTION SUMMARY (Always Visible) ────────────────────────── */}
+            <ReconstructionSummary ring={ringData} />
 
             {/* ════════════════════════════════════════════════════════════════════ */}
             {/* ── CHAT TAB ── */}
@@ -513,6 +500,25 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                     </div>
                 </div>
             </>)}
+
+            {/* ════════════════════════════════════════════════════════════════════ */}
+            {/* ── GNN REPLAY TAB ── */}
+            {/* ════════════════════════════════════════════════════════════════════ */}
+            {activeTab === "gnn" && (
+                <div className="flex-1 overflow-y-auto px-5 py-6 custom-scrollbar min-h-0 bg-black/20">
+                    {ringData?.sigma_data ? (
+                        <GNNReplay
+                            sigmaData={ringData.sigma_data}
+                            containerWidth={540}
+                        />
+                    ) : (
+                        <div className="h-40 flex flex-col items-center justify-center gap-3 text-slate-700">
+                            <Network className="w-8 h-8 opacity-20" />
+                            <p className="text-xs">No graph data available for this ring</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ════════════════════════════════════════════════════════════════════ */}
             {/* ── REPORT TAB ── */}
