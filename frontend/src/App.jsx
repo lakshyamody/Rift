@@ -96,27 +96,6 @@ export default function App() {
   const openChatbot = (id) => { setActiveRingId(id); setShowChatbot(true); setIsPlaying(false); setCurrentFrame(-1); setShowTable(false); };
   const closeChatbot = () => setShowChatbot(false);
   const stopAll = () => { setActiveRingId(null); setCurrentFrame(-1); setIsPlaying(false); setShowChatbot(false); };
-  const downloadReport = async () => {
-    try {
-      // Fetch as text so we control the blob content-type explicitly
-      const text = await (await fetch("http://localhost:8000/report.json")).text();
-      const blob = new Blob([text], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-
-      // Must append to DOM for Firefox/Safari compatibility
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "fraud_report.json";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      // Revoke AFTER the browser has had time to start the download
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-    } catch (e) {
-      alert("Download failed: " + e.message);
-    }
-  };
 
   const activeRing = data?.fraud_rings?.find(r => r.ring_id === activeRingId);
   const activeChatbotRing = data?.chatbot_payload?.rings?.find(r => r.ring_id === activeRingId);
@@ -153,10 +132,6 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={downloadReport}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border bg-emerald-900/20 text-emerald-400 border-emerald-500/25 hover:bg-emerald-900/40 transition-all">
-            <Download className="w-3 h-3" /> Download JSON
-          </button>
           <button onClick={() => { setShowTable(v => !v); setShowChatbot(false); }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all ${showTable ? "bg-blue-900/20 text-blue-400 border-blue-500/25" : "bg-slate-800/60 text-slate-500 border-slate-700/50 hover:text-slate-300"}`}>
             <Table2 className="w-3 h-3" /> Ring Table

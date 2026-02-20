@@ -6,7 +6,6 @@ import {
     ArrowUpRight, Lock, Eye, Layers, CheckCircle
 } from "lucide-react";
 import { geminiStream, getApiKey } from "../gemini";
-import DownloadManager from "./DownloadManager";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 // API key lives in frontend/.env (VITE_GEMINI_API_KEY) — never hardcoded
@@ -30,7 +29,6 @@ const TABS = [
     { id: "chat", icon: MessageCircle, label: "Investigate" },
     { id: "report", icon: FileText, label: "Report" },
     { id: "patterns", icon: Network, label: "Cross-Ring" },
-    { id: "downloads", icon: Download, label: "Downloads" },
 ];
 
 // Pattern-aware question suggestions
@@ -562,20 +560,6 @@ export default function FraudChatbot({ ringData, allCrossRingPatterns, allData, 
                 </div>
             )}
 
-            {/* ════════════════════════════════════════════════════════════════════ */}
-            {/* ── DOWNLOADS TAB ── */}
-            {/* ════════════════════════════════════════════════════════════════════ */}
-            {activeTab === "downloads" && (
-                <div className="flex-1 min-h-0 overflow-hidden">
-                    <DownloadManager
-                        exportData={allData?.export}
-                        fraudRings={allData?.fraud_rings}
-                        suspiciousAccounts={allData?.suspicious_accounts}
-                        crossRingPatterns={allData?.cross_ring_patterns}
-                        summary={allData?.export?.full?.summary}
-                    />
-                </div>
-            )}
         </div>
     );
 }
